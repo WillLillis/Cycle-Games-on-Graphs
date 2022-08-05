@@ -1,0 +1,55 @@
+P1: Reached node 0
+Checking for any cycles that are one move away.
+P1: Checking the play from node 0 to 1
+P1: No cycle detected
+P1: Checking the play from node 0 to 2
+P1: No cycle detected
+P1: Checking the play from node 0 to 3
+P1: No cycle detected
+Checking all available moves now.
+	P2: Reached node 1
+	Checking for any cycles that are one move away.
+	P2: Checking the play from node 1 to 2
+	P2: No cycle detected
+	P2: Checking the play from node 1 to 4
+	P2: No cycle detected
+	Checking all available moves now.
+		P1: Reached node 2
+		Checking for any cycles that are one move away.
+		P1: Checking the play from node 2 to 0
+		Cycle detected. Move history: 0->0->1->2->0
+	P2: Playing from 1 to 2 results in a WIN_STATE. Move history: 0->0->2
+		P1: Reached node 4
+		Checking for any cycles that are one move away.
+		P1: Checking the play from node 4 to 3
+		P1: No cycle detected
+		P1: Checking the play from node 4 to 5
+		P1: No cycle detected
+		Checking all available moves now.
+			P2: Reached node 3
+			Checking for any cycles that are one move away.
+			P2: Checking the play from node 3 to 0
+			Cycle detected. Move history: 0->0->1->4->3->0
+		P1: Playing from 4 to 3 results in a WIN_STATE. Move history: 0->0->3
+			P2: Reached node 5
+			Checking for any cycles that are one move away.
+			P2: Checking the play from node 5 to 2
+			P2: No cycle detected
+			P2: Checking the play from node 5 to 3
+			P2: No cycle detected
+			Checking all available moves now.
+				P1: Reached node 2
+				Checking for any cycles that are one move away.
+				P1: Checking the play from node 2 to 0
+				Cycle detected. Move history: 0->0->1->4->5->2->0
+			P2: Playing from 5 to 2 results in a WIN_STATE. Move history: 0->0->2
+				P1: Reached node 3
+				Checking for any cycles that are one move away.
+				P1: Checking the play from node 3 to 0
+				Cycle detected. Move history: 0->0->1->4->5->3->0
+			P2: Playing from 5 to 3 results in a WIN_STATE. Move history: 0->0->3
+			P2: No good moves, the game is in a loss state.
+		P1: Playing from 4 to 5 results in a LOSS_STATE. Move history: 0->0->5
+	P2: Playing from 1 to 4 results in a WIN_STATE. Move history: 0->0->4
+	P2: No good moves, the game is in a loss state.
+P1: Playing from 0 to 1 results in a LOSS_STATE. Move history: 0->0->1
