@@ -12,7 +12,7 @@
 * be an additional hurdle to future research interns looking to contribute to the code base
 * 
 * As a result of this (potentially misguided) decision, the code is going to rewritten 
-* in a loose style, and hopefully that's ok
+* in a loose style that doesn't focus on object oriented things like classes, and hopefully that's ok
 * 
 * I'm a bit torn in regards to using the std::vector class or just raw arrays
 *	- As some of these runs take quite a bit of time, any amount of overhead we can
@@ -36,9 +36,10 @@
 #include <cassert>
 
 // We'll define the game state in the following manner
-typedef uint_fast8_t GAME_STATE;
+typedef int_fast16_t GAME_STATE;
 #define WIN_STATE		1
 #define LOSS_STATE		0
+#define ERROR_STATE		-1
 
 typedef uint_fast8_t PLAYER_SIDE;
 #define PLAYER_1		1
@@ -60,7 +61,12 @@ typedef uint_fast8_t PLAYER_SIDE;
 
 void fprint_indent(FILE* output, uint_fast16_t num_indent)
 {
-	assert(output != NULL);
+	if (output == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"The supplied file stream is invalid. Nothing will be written.");
+		return;
+	}
 
 	for (uint_fast16_t i = 0; i < num_indent; i++)
 	{
@@ -70,7 +76,12 @@ void fprint_indent(FILE* output, uint_fast16_t num_indent)
 
 void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ...)
 {
-	assert(output != NULL);
+	if (output == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"The supplied file stream is invalid. Nothing will be written.");
+		return;
+	}
 
 	fprint_indent(output, num_indent);
 
@@ -83,10 +94,15 @@ void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ..
 
 void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, uint_fast16_t* move_hist)
 {
-	assert(output != NULL);
+	if (output == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"The supplied file stream is invalid. Nothing will be written.");
+		return;
+	}
 
 	fprintf(output, "%hhu", move_hist[0]); // making the assumption there's at least one entry
-	for (uint_fast16_t i = 0; i <= recur_depth; i++)
+	for (uint_fast16_t i = 1; i <= recur_depth; i++)
 	{
 		fprintf(output, "->%hhu", move_hist[i]);
 	}
@@ -115,8 +131,14 @@ void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, uint_fast16_t* mo
 GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list)
 {
-	// need to account for marking the starting node as used
-	node_use_list[curr_node] = USED;
+	if (adj_matrix == NULL || edge_use_matrix == NULL || node_use_list == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid memory addresses passed to the function.");
+		return ERROR_STATE;
+	}
+
+	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
 	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from curr_node
 	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
 
@@ -156,6 +178,10 @@ GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 			{
 				return WIN_STATE;
 			}
+			if (move_result == ERROR_STATE)
+			{
+				return ERROR_STATE;
+			}
 		}
 	}
 
@@ -192,10 +218,16 @@ GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, uint_fast16_t recur_depth, FILE* output)
 {
-	assert(adj_matrix != NULL);
-	// need to account for marking the starting node as used
-	node_use_list[curr_node] = USED;
 
+	if (adj_matrix == NULL || edge_use_matrix == NULL 
+		|| node_use_list == NULL || move_hist == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid memory addresses passed to the function.");
+		return ERROR_STATE;
+	}
+
+	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
 	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from curr_node
 	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history
@@ -247,13 +279,17 @@ GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
 			node_use_list[curr_neighbor] = NOT_USED;
 			progress_log(output, recur_depth, "%s Playing from %hhu to %hhu results in a %s. ",
-				recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor, move_result == WIN_STATE ? "WIN_STATE" : "LOSS_STATE");
+				recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
 			progress_log(output, 0, "Move history: "); // haven't gone to a new line yet so we set recursion depth to 0
-			fprint_move_hist(output, 0, move_hist);
+			fprint_move_hist(output, recur_depth, move_hist);
 			fprintf(output, "->%hhu\n", curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
 			if (move_result == LOSS_STATE) // if the move puts the game into a loss state, then the current state is a win state
 			{
 				return WIN_STATE;
+			}
+			if (move_result == ERROR_STATE)
+			{
+				return ERROR_STATE;
 			}
 		}
 	}
@@ -287,8 +323,14 @@ GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 GAME_STATE play_AAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list)
 {
-	// need to account for marking the starting node as used
-	node_use_list[curr_node] = USED;
+	if (adj_matrix == NULL || edge_use_matrix == NULL || node_use_list == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid memory addresses passed to the function.");
+		return ERROR_STATE;
+	}
+	
+	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
 	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++)
@@ -310,6 +352,10 @@ GAME_STATE play_AAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 				if (move_result == LOSS_STATE) // if the move puts the game into a loss state, then the current state is a win state
 				{
 					return WIN_STATE;
+				}
+				if (move_result == ERROR_STATE)
+				{
+					return ERROR_STATE;
 				}
 			}
 		}
@@ -342,8 +388,15 @@ GAME_STATE play_AAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 GAME_STATE play_AAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, uint_fast16_t recur_depth, FILE* output)
 {
-	// need to account for marking the starting node as used
-	node_use_list[curr_node] = USED;
+	if (adj_matrix == NULL || edge_use_matrix == NULL
+		|| node_use_list == NULL || move_hist == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid memory addresses passed to the function.");
+		return ERROR_STATE;
+	}
+	
+	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
 	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history
 
@@ -368,13 +421,17 @@ GAME_STATE play_AAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
 				node_use_list[curr_neighbor] = NOT_USED;
 				progress_log(output, recur_depth, "%s Playing from %hhu to %hhu results in a %s. ",
-					recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor, move_result == WIN_STATE ? "WIN_STATE" : "LOSS_STATE");
-				progress_log(output, recur_depth, "Move history: ");
+					recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
+				progress_log(output, 0, "Move history: ");
 				fprint_move_hist(output, recur_depth, move_hist);
 				fprintf(output, "->%hhu\n", curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
 				if (move_result == LOSS_STATE) // if the move puts the game into a loss state, then the current state is a win state
 				{
 					return WIN_STATE;
+				}
+				if (move_result == ERROR_STATE)
+				{
+					return ERROR_STATE;
 				}
 			}
 		}

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cassert>
 #include <filesystem>
+#include "Misc.h"
 
 // Maybe a little overkill, but some defensive programming here to limit how many elements we'll read in
 #define MAX_ELEMENTS	500 // arbitrary max value, feel free to increase if needed
@@ -22,60 +23,6 @@ typedef uint_fast8_t Adjacency_Info;
 #define NOT_ADJACENT	0
 
 // Read in functions
-/****************************************************************************
-* num_digits
-*
-* - Helper function
-* - Gives the number of digits required to represent an unsigned integer in 
-* base 10
-*
-* Parameters :
-* - input : the number in question
-*
-* Returns :
-* - size_t : the required quantity of digits
-****************************************************************************/
-size_t num_digits(uint_fast16_t input)
-{
-	return input == 0 ? 1 : (size_t)std::log10(input) + 1;
-}
-
-/****************************************************************************
-* index_translation
-*
-* - Translates a 2-dimensional i,j coordinate to its equivalent 1-dimensional
-* index
-* - only valid for "matrices" with n columns
-*
-* Parameters :
-* - num_cols : the total number of columns in the matrix
-* - row : the row of the entry in question
-* - col : the column of the entry in question
-*
-* Returns :
-* - size_t : the translated 2-D to 1-D index
-****************************************************************************/
-// Do we want to make the switch from adjacency matrices to listings, and 
-// have this function do the necessary translations?
-// just swap the max value into the row or something 
-// would need to allocate n(n+1)/2 instead of n*n->Talk with Kelvey/ Gates
-	// if directed graphs are at all a possibility, don't do it
-inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_fast16_t col)
-{
-	return ((size_t)num_cols * (size_t)row) + (size_t)col; // casts necessary?
-}
-
-size_t get_file_length(std::fstream* file)
-{
-	assert((*file).is_open());
-	std::streampos pos = (*file).tellg(); // save the initial position so we can return the file back to the caller unchanged
-	(*file).ignore(std::numeric_limits<std::streamsize>::max());
-	size_t file_length = (size_t)(*file).gcount();
-	(*file).clear(); // clear the EOF bit set by our going to the end of the file, any other errors
-	(*file).seekg(0, (std::ios_base::seekdir)pos); // set the position back to where the caller had it because we're courteous like that
-	return file_length;
-}
-
 /****************************************************************************
 * load_adjacency_info
 *
@@ -96,19 +43,34 @@ size_t get_file_length(std::fstream* file)
 * (*num_nodes_out*) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
 // Might want to add functionality for reading in adjacency matrices directly later on
+// Need to add ability to read in adjacency matrices
 uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out)
 {
 	std::fstream data_stream;
 
 	data_stream.open(file_path.string().c_str(), std::fstream::in); // open file with read permissions only
-	assert(data_stream.is_open()); // replace assert with return of a NULL pointer?
+	if (!data_stream.is_open())
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Failed to open the adjacency information file.\nRequested path: %s", file_path.string().c_str());
+	}
 
 	size_t file_length = get_file_length(&data_stream);
 
 	// allocate a buffer with the length to read all of the file's contents in at once
-	assert(file_length > 0);
+	if (!(file_length > 0))
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Received an invalid file length.\nRequested path: %s", file_path.string().c_str());
+		return NULL;
+	}
 	char* data = (char*)malloc(file_length);
-	assert(data != NULL);
+	if (data == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Memory allocation error! Requested %zu bytes for the \"file_length\" variable", file_length);
+		return NULL;
+	}
 
 	data_stream.read(data, file_length); // read the file's contents into the data buffer
 	data_stream.close();
@@ -137,6 +99,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 		}
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
+			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+				"Error parsing the file searching for the largest node label.");
 			free(data);
 			return NULL;
 		}
@@ -146,11 +110,21 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	*num_nodes_out = max_label;
 	// now that we have the max label, we can allocate an array for the adjacency matrix
 	uint_fast16_t* adj_matrix = (uint_fast16_t*)calloc(sizeof(uint_fast16_t), (size_t)max_label * (size_t)max_label);
-	assert(adj_matrix != NULL);
+	if (adj_matrix == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Memory allocation error! Requested %zu bytes for the \"adj_matrix\" variable", sizeof(uint_fast16_t) * (size_t)max_label * (size_t)max_label);
+		if (data != NULL)
+		{
+			free(data);
+		}
+		return NULL;
+	}
 
 	uint_fast16_t node_1, node_2; // to temporarily store node values read in from the data block
 	bool second_node = false; // to track which node (first or second on a given line) we're on
 
+	// Need to redo the parsing here...
 	curr = data_start;
 	assert(curr < file_length);
 	while (curr < file_length)
@@ -161,7 +135,21 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 			{
 				node_1 = std::atoi(data + curr);
 				curr += num_digits(node_1); // advance to the first char past that of the number's
-				assert(curr < file_length && data[curr] == ','); // we shouldn't be at the end of the file, AND the next character has to be a comma
+				// we shouldn't be at the end of the file, AND the next character has to be a comma
+				if (!(curr < file_length && data[curr] == ','))
+				{
+					display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+						"Issue parsing the adjacency information file loaded into memory.\n File path: %s");
+					if (data != NULL)
+					{
+						free(data);
+					}
+					if (adj_matrix != NULL)
+					{
+						free(adj_matrix);
+					}
+					return NULL;
+				}
 				curr++; // advance one more character to skip the comma separating the two digits
 				second_node = true;
 				continue;
@@ -169,10 +157,23 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 			else // reading in the second digit
 			{
 				node_2 = std::atoi(data + curr);
-				curr += num_digits(node_1); // advance to the first char past that of the number's
+				curr += num_digits(node_2); // advance to the first char past that of the number's
 				if (curr < file_length) // if we're not at the end of the file...
 				{
-					assert(data[curr] == '\n'); // ...there should be a newline character next
+					if (!(data[curr] == '\n')) // ...there should be a newline character next
+					{
+						display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+							"Issue parsing the adjacency information file loaded into memory.\n File path: %s");
+						if (data != NULL)
+						{
+							free(data);
+						}
+						if (adj_matrix != NULL)
+						{
+							free(adj_matrix);
+						}
+						return NULL;
+					}
 				}
 				curr++; // advance one more character to skip the newline char
 				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT;
@@ -183,13 +184,24 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 		}
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
-			free(data);
-			free(adj_matrix);
+			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+				"Issue parsing the adjacency information file loaded into memory.\n File path: %s");
+			if (data != NULL)
+			{
+				free(data);
+			}
+			if (adj_matrix != NULL)
+			{
+				free(adj_matrix);
+			}
 			return NULL;
 		}
 	}
 
-	free(data);
+	if (data != NULL)
+	{
+		free(data);
+	}
 	return adj_matrix;
 }
 
@@ -217,6 +229,12 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 ****************************************************************************/
 void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 {
+	if (output == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid file stream.");
+		return;
+	}
 	fprintf(output, "Adjacency_Listing\n"); // label at the top of the file so we know what it is
 
 	// outer ring connections to adjacent nodes around the ring
@@ -258,6 +276,12 @@ void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 ****************************************************************************/
 void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 {
+	if (output == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid file stream.");
+		return;
+	}
 	fprintf(output, "Adjacency_Listing\n"); // label at the top of the file so we know what it is
 
 	for (uint_fast16_t i = 0; i < n; i++)
@@ -342,8 +366,12 @@ inline uint_fast16_t tuple_to_index(uint_fast16_t n, uint_fast16_t tuple_num, ui
 ****************************************************************************/
 uint_fast16_t tuple_diff(uint_fast16_t* tuple_1, uint_fast16_t* tuple_2, uint_fast16_t num_entries)
 {
-	assert(tuple_1 != NULL);
-	assert(tuple_2 != NULL);
+	if (tuple_1 == NULL || tuple_2 == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid memory address(es) supplied. Distance calculations will be invalid");
+		return 0;
+	}
 
 	uint_fast16_t diff = 0;
 
@@ -389,9 +417,12 @@ uint_fast16_t tuple_diff(uint_fast16_t* tuple_1, uint_fast16_t* tuple_2, uint_fa
 void z_mn_group_gen(uint_fast16_t* member_list, uint_fast16_t* value_holder,
 	uint_fast16_t place_in_tuple, uint_fast16_t* place_in_member_list, uint_fast16_t m, uint_fast16_t n)
 {
-	assert(member_list != NULL);
-	assert(value_holder != NULL);
-	assert(place_in_member_list != NULL);
+	if (member_list == NULL || value_holder == NULL || place_in_member_list == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid memory address(es) supplied. Group generation results will be invalid.");
+		return;
+	}
 
 	if (place_in_tuple < n - 1)
 	{
@@ -436,29 +467,50 @@ void z_mn_group_gen(uint_fast16_t* member_list, uint_fast16_t* value_holder,
 ****************************************************************************/
 void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 {
-	assert(output != NULL);
+	if (output == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Invalid file stream.");
+		return;
+	}
 
 	uint_fast16_t num_tuples = (uint16_t)std::pow(m, n);
-	uint_fast16_t* value_holder;
-	uint_fast16_t* member_list;
-	uint_fast16_t* place_in_member_list;
+	uint_fast16_t* value_holder = (uint_fast16_t*)malloc(n * sizeof(uint_fast16_t));;
+	uint_fast16_t* member_list = (uint_fast16_t*)malloc((size_t)(num_tuples * n) * sizeof(uint_fast16_t));
+	uint_fast16_t* place_in_member_list = (uint_fast16_t*)calloc(1, sizeof(uint_fast16_t)); // would just make this a stack variable and pass its address in, but was getting heap corruption warnings
 	bool has_entry = false;
 
-	value_holder = (uint_fast16_t*)malloc(n * sizeof(uint_fast16_t));
-	member_list = (uint_fast16_t*)malloc((size_t)(num_tuples * n) * sizeof(uint_fast16_t));
-	place_in_member_list = (uint_fast16_t*)calloc(1, sizeof(uint_fast16_t)); // would just make this a stack variable and pass its address in, but was getting heap corruption warnings
-
-	assert(value_holder != NULL);
-	assert(member_list != NULL);
-	assert(place_in_member_list != NULL);
+	if (value_holder == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Memory allocation error! Requested %zu bytes for the \"value_holder\" variable", n * sizeof(uint_fast16_t));
+		return;
+	}
+	if (member_list == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Memory allocation error! Requested %zu bytes for the \"member_list\" variable", (size_t)(num_tuples * n) * sizeof(uint_fast16_t));
+		return;
+	}
+	if (place_in_member_list == NULL)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Memory allocation error! Requested %zu bytes for the \"place_in_member_list\" variable", sizeof(uint_fast16_t));
+		return;
+	}
 	
 	z_mn_group_gen(member_list, value_holder, 0, place_in_member_list, m, n);
 
-	free(value_holder);
-	free(place_in_member_list);
-
+	if (value_holder != NULL)
+	{
+		free(value_holder);
+	}
+	if (place_in_member_list != NULL)
+	{
+		free(place_in_member_list);
+	}
+	
 	// output to file
-
 	fprintf(output, "Adjacency_Listing\n");
 	for (uint_fast16_t i = 0; i < num_tuples; i++)
 	{
@@ -493,5 +545,8 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 		}
 	}
 	
-	free(member_list);
+	if (member_list != NULL)
+	{
+		free(member_list);
+	}
 }
