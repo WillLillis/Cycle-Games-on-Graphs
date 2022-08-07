@@ -85,7 +85,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	std::filesystem::path adj_path_temp;
 	
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, use it
-	adj_path = std::filesystem::path(ADJ_DIR);
+	adj_path_temp = std::filesystem::path(ADJ_DIR);
 #else // otherwise we'll do things in the project's current directory
 	adj_path_temp = std::filesystem::current_path();
 	adj_path_temp.append("Adjacency Information");
@@ -556,12 +556,6 @@ void play_menu()
 {
 	system("cls");
 	std::filesystem::path adj_path;
-#ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, use it
-	adj_path = ADJ_DIR;
-#else // otherwise we'll do things in the project's current directory
-	adj_path = std::filesystem::current_path(); 
-	adj_path.append("Adjacency Information");
-#endif // ALT_ADJ_PATH
 
 	if (!verify_adj_info_path(&adj_path, true))
 	{
@@ -569,9 +563,7 @@ void play_menu()
 			"Failed to find a non-empty \"Adjacency Information\" directory.\nRequested path: %s", adj_path.string().c_str());
 	}
 
-	std::filesystem::directory_entry adj_dir(adj_path);
-
-	play_menu_subdir(adj_dir);
+	play_menu_subdir(adj_path);
 }
 
 // Need to be able to walk through a variable number of graph parameters...think it's safe to assume they're all uint_fast16_t's, can make a change later if it's needed
