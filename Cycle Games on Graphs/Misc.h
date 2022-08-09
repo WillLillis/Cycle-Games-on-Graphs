@@ -4,10 +4,32 @@
 * fit within the other files
 * 
 */
-
 #pragma once
 #include <cstdarg>
 
+/****************************************************************************
+* display_error
+*
+* - Prints a message to the console indicating an error. Gives the file, line
+* number, and function in which the error occured. Also allows the caller to 
+* provide a custom message to print along with the error, in a "printf style"
+* using a const char* format string and variable arguments
+*
+* Parameters :
+* - file_name : name of the file in which the error occurred, grabbed using the
+* __FILE__ macro
+* - line_num : the line number where the file occurred, grabbed using the 
+* __LINE__ macro
+* - func_sig : the signature of the function in which the error occurred, grabbed
+* using the __FUNCSIG__ macro
+* - user_clear : indicates whether the user will have to provide an input in order
+* to clear/ continue past the error
+* - err_msg : format string for the user's custom error message
+* - ... : variable number of optional arguments corresponding to the format string
+*
+* Returns :
+* - none 
+****************************************************************************/
 void display_error(const char* file_name, int line_num, const char* func_sig, bool user_clear, const char* err_msg, ...)
 {
 	va_list arg_ptr;
@@ -28,7 +50,19 @@ void display_error(const char* file_name, int line_num, const char* func_sig, bo
 	}
 }
 
-// lil helper function for verifying user inputs
+/****************************************************************************
+* is_number
+*
+* - Indicates whether the supplied std::string contains just a number
+* - Used as a lil helper function when verifying user inputs
+* - Empty strings will be returned as false
+*
+* Parameters :
+* - input : the std::string in question
+* 
+* Returns :
+* - bool : true if input is a number, false otherwise
+****************************************************************************/
 bool is_number(std::string input)
 {
 	bool non_empty = false;
@@ -44,8 +78,19 @@ bool is_number(std::string input)
 	return non_empty; // want to make sure an empty string wasn't passed in
 }
 
-//ASCII escape sequence magic, I don't know it just works
-//https://copyprogramming.com/howto/c-how-do-i-erase-a-line-from-the-console
+/****************************************************************************
+* erase_lines
+*
+* - Clears the specified number of lines in the console
+* - Uses ASCII escape sequences
+* - https://copyprogramming.com/howto/c-how-do-i-erase-a-line-from-the-console
+*
+* Parameters :
+* - num_lines : the number of lines to clear
+*
+* Returns :
+* - none
+****************************************************************************/
 void erase_lines(uint_fast16_t num_lines)
 {
 	if (num_lines > 0)
@@ -86,6 +131,19 @@ inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_
 	return ((size_t)num_cols * (size_t)row) + (size_t)col; // casts necessary?
 }
 
+/****************************************************************************
+* get_file_length
+*
+* - Takes in a pointer to an ALREADY OPEN std::fstream and returns the length
+* of the file in bytes
+* - Any iostream errors/ flags set before the function call will be cleared
+*
+* Parameters :
+* - file : pointer to the fstream in question
+*
+* Returns :
+* - size_t : the length in bytes of the file
+****************************************************************************/
 size_t get_file_length(std::fstream* file)
 {
 	if (!(*file).is_open())
@@ -115,7 +173,7 @@ size_t get_file_length(std::fstream* file)
 * Returns :
 * - size_t : the required quantity of digits
 ****************************************************************************/
-size_t num_digits(uint_fast16_t input)
+inline size_t num_digits(uint_fast16_t input)
 {
 	return input == 0 ? 1 : (size_t)std::log10(input) + 1;
 }

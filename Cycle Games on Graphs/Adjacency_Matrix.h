@@ -22,7 +22,6 @@ typedef uint_fast8_t Adjacency_Info;
 #define ADJACENT		1
 #define NOT_ADJACENT	0
 
-// Read in functions
 /****************************************************************************
 * load_adjacency_info
 *
@@ -40,7 +39,7 @@ typedef uint_fast8_t Adjacency_Info;
 *
 * Returns :
 * - uint_fast16_t* : pointer to a buffer of size 
-* (*num_nodes_out*) * (*num_nodes_out) holding the adjacency matrix
+* (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
 // Might want to add functionality for reading in adjacency matrices directly later on
 // Need to add ability to read in adjacency matrices
@@ -312,7 +311,7 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 * regarding a good way to generate all the members of a given Z_m^n
 * group, and the recursive solution is what we came up with
 * - An iterative solution would likely be much clearer and vastly preferred, but for 
-* now we're moving on
+* now this works and we're moving on
 * - The original implementation of this used std::vectors and a crappy little
 * tuple template class I wrote 
 *	- While it may make sense to switch back to using the template class later, for
@@ -335,7 +334,7 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 *
 * Parameters :
 * - n : number of entries per tuple
-* - tuple_num : which tuple we're accessing within the array
+* - tuple_num : which tuple we're accessing within the array of tuples
 * - tuple_entry : which entry we're accessing within said tuple
 *
 * Returns :
@@ -364,6 +363,7 @@ inline uint_fast16_t tuple_to_index(uint_fast16_t n, uint_fast16_t tuple_num, ui
 * Returns :
 * - uint_fast16_t : the distance between tuple_1 and tuple_2
 ****************************************************************************/
+// Different/ better way to indicate error on return?-> make it a int_fast32_t, return -1 or something?
 uint_fast16_t tuple_diff(uint_fast16_t* tuple_1, uint_fast16_t* tuple_2, uint_fast16_t num_entries)
 {
 	if (tuple_1 == NULL || tuple_2 == NULL)

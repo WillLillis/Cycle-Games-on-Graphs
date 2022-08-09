@@ -58,7 +58,20 @@ typedef uint_fast8_t PLAYER_SIDE;
 #define USED		1
 #define NOT_USED	0
 
-
+/****************************************************************************
+* fprint_indent
+*
+* - prints the specified number of tabs to the specified file stream
+* - used as indents to indicate the level of recursion in the output files 
+* of loud runs
+*
+* Parameters :
+* - output : the file stream to print the tabs to
+* - num_indent : the number of tabs to print
+*
+* Returns :
+* - none
+****************************************************************************/
 void fprint_indent(FILE* output, uint_fast16_t num_indent)
 {
 	if (output == NULL)
@@ -74,6 +87,25 @@ void fprint_indent(FILE* output, uint_fast16_t num_indent)
 	}
 }
 
+/****************************************************************************
+* progress_log
+*
+* - prints a message to the supplied file stream with the specified indent
+* - used to more easily write to the output files of loud runs
+* 
+*
+* Parameters :
+* - output : the file stream to print the tabs to
+* - num_indent : the number of tabs to print (typically the recursion level
+* of the current call)
+* - format : the "printf style" format string to be translated and printed 
+* to the file
+* - ... : variable number of optional arguments corresponding to the format 
+* string
+*
+* Returns :
+* - none
+****************************************************************************/
 void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ...)
 {
 	if (output == NULL)
@@ -92,6 +124,23 @@ void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ..
 	va_end(argptr);
 }
 
+/****************************************************************************
+* fprint_move_hist
+*
+* - prints the current move history to the specified file stream
+* - used to more easily write move history information to the output files 
+* of loud runs
+*
+*
+* Parameters :
+* - output : the file stream to print the tabs to
+* - recur_depth : typically the recursion level of the current call, used to
+* specify how many moves to access out of the move_hist memory block
+* - move_hist : block of memory holding the current move history of the game
+*
+* Returns :
+* - none
+****************************************************************************/
 void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, uint_fast16_t* move_hist)
 {
 	if (output == NULL)

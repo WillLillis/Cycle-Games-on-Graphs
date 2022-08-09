@@ -72,11 +72,50 @@ GRAPH_GEN_INFO avail_graphs[] = {
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency Information"	// (for example on my machine...)
 //#define ALT_RESULT_PATH		"C:\\Users\\willl\\Desktop\\Results"				// ^
 
-void print_game_results(GAME_STATE p1_result)
+/****************************************************************************
+* print_game_results
+*
+* - Prints the winner of a game to the console
+* - Lil helper function
+*
+* Parameters :
+* - p1_result : the game state found for player 1 in the game's initial state
+*
+* Returns :
+* - none
+****************************************************************************/
+void inline print_game_results(GAME_STATE p1_result)
 {
 	printf("%s Wins!\n", p1_result == WIN_STATE ? "P1" : "P2");
 }
 
+/****************************************************************************
+* verify_adj_info_path
+*
+* - Used to see if there is a valid "Adjacency Information" directory
+* - If a valid "Adjacency Information" directory is found, its path is returned 
+* by reference via the result_path parameter
+* - Checks in the current directory, unless ALT_RESULT_PATH is defined, in
+* which case the user supplied path is checked
+* - If the user supplied path fails the check, an error is returned
+* - If the directory isn't found in the current directory, one is created and
+* the program is allowed to continue
+* - Continues to check if there is a graph family specific subdirectory within
+* the "Adjacency Information" directory depending on the sub_dir_graph_fam
+* parameter
+*
+* Parameters :
+* - result_path : if a valid directory is found/ created, its path is passed
+* out by reference using this parameter
+* - fail_on_create : specifies whether to return an error if the "Adjacency 
+* Information" directory has to be created
+* - sub_dir_graph_gam : which graph family subdirectory to search for if 
+* specified. If not, there is no search past the "Adjacency Information" 
+* directory
+*
+* Returns :
+* - bool : true is the directory was successfuly found/ made, false otherwise
+****************************************************************************/
 // returns true if it finds the valid adjacency info directory, 
 // false otherwise, 
 // how do we want to indicate which graph family for the sub dir?
@@ -135,6 +174,27 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	return true;
 }
 
+/****************************************************************************
+* verify_results_path
+*
+* - Used to see if there is a valid "Results" directory 
+* - If a valid "Results" directory is found, its path is returned by 
+* reference via the result_path parameter
+* - Checks in the current directory, unless ALT_RESULT_PATH is defined, in 
+* which case the user supplied path is checked
+* - If the user supplied path fails the check, an error is returned
+* - If the directory isn't found in the current directory, one is created and 
+* the program is allowed to continue
+*
+* Parameters :
+* - result_path : if a valid directory is found/ created, its path is passed
+* out by reference using this parameter
+* - fail_on_create : specifies whether to return an error if the "Results" 
+* directory has to be created
+*
+* Returns :
+* - bool : true is the directory was successfuly found/ made, false otherwise
+****************************************************************************/
 // returns true if it finds the valid results directory, and assigns it as the value to the param passed in
 // false otherwise, 
 bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create)
@@ -180,6 +240,23 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 	return true;
 }
 
+/****************************************************************************
+* user_plays
+*
+* - Function called when the user elects to play a game on a specified
+* adjacency information file
+* - Prompts the user for 
+*	- MAC or AAC
+*	- the starting node
+*	- quiet or loud run
+* - Displays the game's result after completion
+*
+* Parameters :
+* - adj_info_path : path to the adjacency information file to be played on
+*
+* Returns :
+* - none
+****************************************************************************/
 // this is kind of long...look for ways to break up?
 // want to change [BACK] options to go back a step in param selection, instead of back to the file selection page?
 // also needs LOTS of testing....
@@ -307,7 +384,7 @@ void user_plays(std::filesystem::path adj_info_path)
 		{
 			return;
 		}
-	} while (!(output_select >= 0 && output_select < num_nodes));
+	} while (!(node_select >= 0 && node_select < num_nodes));
 
 	
 	uint_fast16_t* edge_use = (uint_fast16_t*)calloc(num_nodes * num_nodes, sizeof(uint_fast16_t));
@@ -447,6 +524,21 @@ void user_plays(std::filesystem::path adj_info_path)
 	char throw_away = std::getchar();
 }
 
+/****************************************************************************
+* play_menu_subdir
+*
+* - Function called when the user elects to play a game in the main menu
+* - Does some checks on the adjacency information files, before then calling
+* play_menu_subdir to allow the user to browse through all of the adjacency
+* information files
+*
+* Parameters :
+* - curr_dir : the current directory that this call of the function will browse 
+* within
+*
+* Returns :
+* - none
+****************************************************************************/
 // do we want a file naming option?
 void play_menu_subdir(std::filesystem::path curr_dir)
 {
@@ -550,32 +642,64 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 		}
 	}
 }
-// change directory verification to a function call?
-	// function will either search for user defined path or path in curr dir
+
+/****************************************************************************
+* play_menu
+*
+* - Function called when the user elects to play a game in the main menu
+* - Does some checks on the adjacency information files, before then calling 
+* play_menu_subdir to allow the user to browse through all of the adjacency 
+* information files
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
 void play_menu()
 {
 	system("cls");
 	std::filesystem::path adj_path;
 
-	if (!verify_adj_info_path(&adj_path, true))
+	if (!verify_adj_info_path(&adj_path, true)) // make sure the adjacency info directory is there
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to find a non-empty \"Adjacency Information\" directory.\nRequested path: %s", adj_path.string().c_str());
+			"Issues with/ couldn't find the \"Adjacency Information\" directory.\nRequested path: %s", adj_path.string().c_str());
 	}
 
-	play_menu_subdir(adj_path);
+	play_menu_subdir(adj_path); // and if so then start browsing
 }
 
 // Need to be able to walk through a variable number of graph parameters...think it's safe to assume they're all uint_fast16_t's, can make a change later if it's needed
+/****************************************************************************
+* get_adj_info_file_name
+*
+* - Takes in a graph family and its associated graph parameters and returns a 
+* std::string of the name for the graph's adjacency information file
+* - Name is of the form "<Graph Family Name> (param1, param2, ...).txt"
+*
+* Parameters :
+* - graph_fam : Which graph family the name is being made for
+* - num_args : the number of optional graph parameters to follow
+* - ... : variable number of optional arguments corresponding to graph 
+* parameters
+*
+* Returns :
+* - std::string : the generated name for the specified graph's adjacency 
+* information file
+****************************************************************************/
 std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_args, ...)
 {
 	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true, 
 			"Invalid graph family parameter supplied to generate the file name.");
+		return "";
 	}
 
-	std::string file_name = avail_graphs[graph_fam].graph_name;
+	#pragma warning(suppress:6385) // makes warning go away in compilation but not IntelliSense
+	std::string file_name = avail_graphs[graph_fam].graph_name; // bad warning sometimes pops up here
 	if (num_args == 0) // no graph parameters
 	{
 		file_name.append(".txt");
@@ -611,8 +735,22 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 // Need to go through file name creation bits of code so that these save in the correct folders in whatever adjacency directory is specified
 // If a subfolder of the correct name doesn't exist, just stick it in the directory-> leave it up to the user where they want their files
 // If a subfolder of the correct name does exist, put it in there->organization done for those who don't care
-	// do we want to add option to play immediately on a file we jsut generated?->talk with Gates/ Kelvey
+	// do we want to add option to play immediately on a file we just generated?->talk with Gates/ Kelvey
 
+/****************************************************************************
+* user_generalized_petersen_gen
+*
+* - Function called when the user elects to generate an adjacency information
+* file for the generalized petersen graph family
+* - Prompts the user for the relevant graph parameters (m and n) before then
+* calling the actual generation function
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
 void user_generalized_petersen_gen()
 {
 	// Generalized Petersen graphs need 'n' and 'k' parameters to be contructed
@@ -703,6 +841,20 @@ void user_generalized_petersen_gen()
 	char throw_away = std::getchar();
 }
 
+/****************************************************************************
+* user_stacked_prism_gen
+*
+* - Function called when the user elects to generate an adjacency information
+* file for the stacked prism graph family
+* - Prompts the user for the relevant graph parameters (m and n) before then
+* calling the actual generation function
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
 void user_stacked_prism_gen()
 {
 	// Stacked Prism graphs need 'm' and 'n' parameters to be contructed
@@ -791,6 +943,20 @@ void user_stacked_prism_gen()
 	char throw_away = std::getchar();
 }
 
+/****************************************************************************
+* user_z_mn_gen
+*
+* - Function called when the user elects to generate an adjacency information
+* file for the Z_m^n graph family
+* - Prompts the user for the relevant graph parameters (m and n) before then 
+* calling the actual generation function
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
 void user_z_mn_gen()
 {
 	// Z_m^n graphs need 'm' and 'n' parameters to be contructed
@@ -879,6 +1045,20 @@ void user_z_mn_gen()
 	char throw_away = std::getchar();
 }
 
+/****************************************************************************
+* generate_menu
+*
+* - Function called when the user elects to generate adjacency information
+* from the main menu
+* - Displays the available graph families to generate, and then calls the
+* appropriate user generate function once a valid selection is made
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
 void generate_menu()
 {
 	std::string graph_choice_raw; // could just use a char since we have less than 10 choices, but this allows for easier expansion in the future
@@ -916,6 +1096,19 @@ void generate_menu()
 	}
 }
 
+/****************************************************************************
+* main_menu
+*
+* - First function called to beging the program
+* - Allows the user to choose between playing a game, generating a file 
+* containing adjacency information, or to exit the program
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
 void main_menu()
 {
 	// what do we want to do with the welcome screen?
