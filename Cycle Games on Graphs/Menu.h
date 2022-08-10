@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem> // Property Pages->Configuration Properties->General->C++ Language Standard->ISO C++ 17 Standard (/std:c++17) (OR NEWER)
 #include "Adjacency_Matrix.h"
+#include "Cycle_Games.h"
 #include "Misc.h"
 
 /*
@@ -49,16 +50,21 @@ void user_generalized_petersen_gen();
 void user_stacked_prism_gen();
 void user_z_mn_gen();
 
+// Visual stido is giving me warnings that the above functions don't 
+// have definitions, even though they're clearly defined farther down in the file'
+// the code still compiles and runs, but I'd really like to know how to fix this
+
 typedef struct GRAPH_GEN_INFO {
 	std::string graph_name;
+	std::string graph_file_name;
 	void (*gen_func)();
 	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
 }GRAPH_GEN_INFO;
 
 GRAPH_GEN_INFO avail_graphs[] = {
-	GRAPH_GEN_INFO{"Generalized Petersen", user_generalized_petersen_gen},
-	GRAPH_GEN_INFO{"Stacked Prism", user_stacked_prism_gen},
-	GRAPH_GEN_INFO{"Z_m^n", user_z_mn_gen}
+	GRAPH_GEN_INFO{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
+	GRAPH_GEN_INFO{"Stacked Prism", "Stacked_Prism", user_stacked_prism_gen},
+	GRAPH_GEN_INFO{"Z_m^n", "Z_m^n", user_z_mn_gen}
 };
 
 // If the order in the avail_graphs array is changed or a new entry is added, these
@@ -69,7 +75,7 @@ GRAPH_GEN_INFO avail_graphs[] = {
 #define Z_MN_ENTRY			2
 
 // Leave commented out if you want files in the project's working directory
-//#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency Information"	// (for example on my machine...)
+//#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
 //#define ALT_RESULT_PATH		"C:\\Users\\willl\\Desktop\\Results"				// ^
 
 /****************************************************************************
@@ -92,8 +98,8 @@ void inline print_game_results(GAME_STATE p1_result)
 /****************************************************************************
 * verify_adj_info_path
 *
-* - Used to see if there is a valid "Adjacency Information" directory
-* - If a valid "Adjacency Information" directory is found, its path is returned 
+* - Used to see if there is a valid "Adjacency_Information" directory
+* - If a valid "Adjacency_Information" directory is found, its path is returned 
 * by reference via the result_path parameter
 * - Checks in the current directory, unless ALT_RESULT_PATH is defined, in
 * which case the user supplied path is checked
@@ -101,7 +107,7 @@ void inline print_game_results(GAME_STATE p1_result)
 * - If the directory isn't found in the current directory, one is created and
 * the program is allowed to continue
 * - Continues to check if there is a graph family specific subdirectory within
-* the "Adjacency Information" directory depending on the sub_dir_graph_fam
+* the "Adjacency_Information" directory depending on the sub_dir_graph_fam
 * parameter
 *
 * Parameters :
@@ -110,7 +116,7 @@ void inline print_game_results(GAME_STATE p1_result)
 * - fail_on_create : specifies whether to return an error if the "Adjacency 
 * Information" directory has to be created
 * - sub_dir_graph_gam : which graph family subdirectory to search for if 
-* specified. If not, there is no search past the "Adjacency Information" 
+* specified. If not, there is no search past the "Adjacency_Information" 
 * directory
 *
 * Returns :
@@ -127,7 +133,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	adj_path_temp = std::filesystem::path(ADJ_DIR);
 #else // otherwise we'll do things in the project's current directory
 	adj_path_temp = std::filesystem::current_path();
-	adj_path_temp.append("Adjacency Information");
+	adj_path_temp.append("Adjacency_Information");
 	// just add the graph fam name here with an append?-> won't know which failed, but maybe that's ok
 #endif // ALT_ADJ_PATH
 
@@ -137,16 +143,16 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	{
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, tell them there's something wrong with it
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Unable to find the \"Adjacency Information\" directory.\nThe alternate directory variable is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
+			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate directory variable is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
 		return false;
 #else
 		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
-			"Unable to find the \"Adjacency Information\" directory.\nThe alternate directory variable is not defined, the search was completed in the project's current directory.");
+			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate directory variable is not defined, the search was completed in the project's current directory.");
 		printf("Creating the necessary directory now...\n");
 		if (!std::filesystem::create_directory(adj_path_temp))
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Failed to create the specified \"Adjacency Information\" directory\nRequested path: %s", adj_path_temp.string().c_str());
+				"Failed to create the specified \"Adjacency_Information\" directory\nRequested path: %s", adj_path_temp.string().c_str());
 			return false;
 		}
 #endif // ALT_ADJ_PATH
@@ -155,12 +161,12 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 		return !fail_on_create; // if fail_on_create is true, we need to return false
 	}
 
-	// otherwise the Adjacency Information directory exists...now it's time to check for graph family-specific sub directories
+	// otherwise the Adjacency_Information directory exists...now it's time to check for graph family-specific sub directories
 	std::filesystem::path graph_sub_path;
 	if (sub_dir_graph_fam >= 0 && sub_dir_graph_fam < NUM_GRAPH_FAMS) // if the specified graph family parameter is valid
 	{
 		graph_sub_path = adj_path_temp;
-		graph_sub_path.append(avail_graphs[sub_dir_graph_fam].graph_name);
+		graph_sub_path.append(avail_graphs[sub_dir_graph_fam].graph_file_name);
 		std::filesystem::directory_entry graph_sub_dir(graph_sub_path);
 		if (graph_sub_dir.exists())
 		{
@@ -449,19 +455,25 @@ void user_plays(std::filesystem::path adj_info_path)
 		result_path.append(file_name);
 		// want to add some sort of versioning here so we don't automatically overwrite old files?
 
-		// not sure if _set_errno() can be called on a non-Windows machine
-//#ifdef WIN32 // non-Windows way to set errno?
+#ifdef WIN32 // non-Windows way to set errno?
 		_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
-//#endif // WIN32
-		errno_t err = fopen_s(&result_stream, result_path.string().c_str(), "w");
+		errno_t err = fopen_s(&result_stream, result_path.string().c_str(), "w"); 
+#else
+		int err = 0;
+		result_stream = fopen(result_path.string().c_str(), "w");
+#endif // WIN32
+
+#ifdef WIN32
 		if (err != 0)
 		{
-#ifdef WIN32
+
 			char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 			strerror_s(err_buff, 94, NULL);
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", result_path.string().c_str(), err_buff);
 #else
+		if (result_stream == NULL)
+		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", result_path.string().c_str(), err);
 #endif // WIN32
@@ -665,7 +677,7 @@ void play_menu()
 	if (!verify_adj_info_path(&adj_path, true)) // make sure the adjacency info directory is there
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Issues with/ couldn't find the \"Adjacency Information\" directory.\nRequested path: %s", adj_path.string().c_str());
+			"Issues with/ couldn't find the \"Adjacency_Information\" directory.\nRequested path: %s", adj_path.string().c_str());
 	}
 
 	play_menu_subdir(adj_path); // and if so then start browsing
@@ -699,14 +711,14 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 	}
 
 	#pragma warning(suppress:6385) // makes warning go away in compilation but not IntelliSense
-	std::string file_name = avail_graphs[graph_fam].graph_name; // bad warning sometimes pops up here
+	std::string file_name = avail_graphs[graph_fam].graph_file_name; // bad warning sometimes pops up here
 	if (num_args == 0) // no graph parameters
 	{
 		file_name.append(".txt");
 		return file_name;
 	}
 
-	file_name.append(" (");
+	file_name.append("_(");
 
 	va_list arg_ptr;
 	va_start(arg_ptr, num_args);
@@ -714,7 +726,7 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 	{
 		if (curr_arg > 0)
 		{
-			file_name.append(", ");
+			file_name.append(",");
 		}
 		file_name.append(std::to_string(va_arg(arg_ptr, uint_fast16_t)));
 	}
@@ -805,19 +817,25 @@ void user_generalized_petersen_gen()
 
 	// can check if file exists here if we want to do some kind of versioning....
 
-	// not sure if _set_errno() can be called on a non-Windows machine
-//#ifdef WIN32 // non-Windows way to set errno?
+#ifdef WIN32 // non-Windows way to set errno?
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
-//#endif // WIN32
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
+#else 
+	int err = 0;
+	output = fopen(result_path.string().c_str(), "w");
+#endif // WIN32
+
+#ifdef WIN32
 	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
 	{
-#ifdef WIN32
+
 		char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, 94, NULL);
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
+	if (err == NULL)
+	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str(), err);
 #endif // WIN32
@@ -906,19 +924,24 @@ void user_stacked_prism_gen()
 	std::string file_name = get_adj_info_file_name(STACKED_PRISM_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 
-	// not sure if _set_errno() can be called on a non-Windows machine
-//#ifdef WIN32 // non-Windows way to set errno?
+#ifdef WIN32 // non-Windows way to set errno?
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
-//#endif // WIN32
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
+#else
+	int err = 0;
+	output = fopen(output_path.string().c_str(), "w");
+#endif // WIN32
+	
+#ifdef WIN32
 	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
 	{
-#ifdef WIN32
 		char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, 94, NULL);
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", file_name.c_str(), err_buff);
 #else
+	if(output == NULL)
+	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", file_name.c_str(), err);
 #endif // WIN32
@@ -1008,19 +1031,25 @@ void user_z_mn_gen()
 	std::string file_name = get_adj_info_file_name(Z_MN_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 	
-	// not sure if _set_errno() can be called on a non-Windows machine
-//#ifdef WIN32 // non-Windows way to set errno?
+
+#ifdef WIN32 // non-Windows way to set errno?
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
-//#endif // WIN32
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
+#else
+	int err = 0;
+	output = fopen(output_path.string().c_str(), "w");
+#endif // WIN32
+
+#ifdef WIN32
 	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
 	{
-#ifdef WIN32
 		char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, 94, NULL);
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", file_name.c_str(), err_buff);
 #else
+	if(output == NULL)
+	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", file_name.c_str(), err);
 #endif // WIN32

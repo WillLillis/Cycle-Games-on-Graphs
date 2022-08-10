@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cassert>
 #include <filesystem>
+#include <cmath>
 #include "Misc.h"
 
 // Maybe a little overkill, but some defensive programming here to limit how many elements we'll read in
@@ -112,7 +113,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	if (adj_matrix == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"adj_matrix\" variable", sizeof(uint_fast16_t) * (size_t)max_label * (size_t)max_label);
+			"Memory allocation error! Requested %zu bytes for the \"adj_matrix\" variable", 
+			sizeof(uint_fast16_t) * (size_t)max_label * (size_t)max_label);
 		if (data != NULL)
 		{
 			free(data);
@@ -123,9 +125,22 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	uint_fast16_t node_1, node_2; // to temporarily store node values read in from the data block
 	bool second_node = false; // to track which node (first or second on a given line) we're on
 
-	// Need to redo the parsing here...
 	curr = data_start;
-	assert(curr < file_length);
+	if (!(curr < file_length))
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+			file_path.string().c_str());
+		if (data != NULL)
+		{
+			free(data);
+		}
+		if (adj_matrix != NULL)
+		{
+			free(adj_matrix);
+		}
+		return NULL;
+	}
 	while (curr < file_length)
 	{
 		if (std::isdigit(data[curr]))
@@ -138,7 +153,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 				if (!(curr < file_length && data[curr] == ','))
 				{
 					display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-						"Issue parsing the adjacency information file loaded into memory.\n File path: %s");
+						"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+						file_path.string().c_str());
 					if (data != NULL)
 					{
 						free(data);
@@ -162,7 +178,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 					if (!(data[curr] == '\n')) // ...there should be a newline character next
 					{
 						display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-							"Issue parsing the adjacency information file loaded into memory.\n File path: %s");
+							"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+							file_path.string().c_str());
 						if (data != NULL)
 						{
 							free(data);
@@ -184,7 +201,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Issue parsing the adjacency information file loaded into memory.\n File path: %s");
+				"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+				file_path.string().c_str());
 			if (data != NULL)
 			{
 				free(data);

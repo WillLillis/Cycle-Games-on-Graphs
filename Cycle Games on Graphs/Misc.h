@@ -6,6 +6,36 @@
 */
 #pragma once
 #include <cstdarg>
+#include <cmath>
+
+/*
+*
+* Have to have the following #define mess because __FUNCSIG__ isn't valid 
+* outside of Microsoft's compiler...
+* 
+*/
+
+// can clean this up with #elif?
+
+// can add more as the need arises
+#ifndef __FUNCSIG__
+	#ifdef __PRETTY_FUNCTION__
+		#define __FUNCSIG__ __PRETTY_FUNCTION__
+	#else 
+		#ifdef __func__ // not a macro so not defined?
+			#define __FUNCSIG__ __func__
+		#else
+			#ifdef __FUNCTION__
+				#define __FUNCSIG__ __FUNCTION__
+			#else
+				#define __FUNCSIG__ "<Function name macro error>"
+			#endif // __FUNCTION__
+		#endif // __func__
+	#endif // __PRETTY_FUNCTION__
+#endif //__FUNCSIG__
+
+
+
 
 /****************************************************************************
 * display_error
@@ -152,11 +182,12 @@ size_t get_file_length(std::fstream* file)
 			"The supplied file stream is not open.");
 		return 0;
 	}
-	std::streampos pos = (*file).tellg(); // save the initial position so we can return the file back to the caller unchanged
+	//std::streampos pos = (*file).tellg(); 
+	size_t pos = (size_t)(*file).tellg(); // save the initial position so we can return the file back to the caller unchanged
 	(*file).ignore(std::numeric_limits<std::streamsize>::max());
 	size_t file_length = (size_t)(*file).gcount();
 	(*file).clear(); // clear the EOF bit set by our going to the end of the file, any other errors
-	(*file).seekg(0, (std::ios_base::seekdir)pos); // set the position back to where the caller had it because we're courteous like that
+	(*file).seekg(0, /*(std::ios_base::seekdir)*/pos); // set the position back to where the caller had it because we're courteous like that
 	return file_length;
 }
 
