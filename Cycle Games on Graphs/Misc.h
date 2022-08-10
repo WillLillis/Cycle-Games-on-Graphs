@@ -17,24 +17,25 @@
 
 // can clean this up with #elif?
 
-// can add more as the need arises
-#ifndef __FUNCSIG__
-	#ifdef __PRETTY_FUNCTION__
+// After a bunch of digging online I finally found this:
+// https://web.archive.org/web/20140625123200/http://nadeausoftware.com/articles/2012/10/c_c_tip_how_detect_compiler_name_and_version_using_compiler_predefined_macros
+
+// It seems reasonable to only worry about the Miscrosoft, GCC, and CLANG compilers,
+// but if we need to add more later on, then we can do so
+// Since we're using Microsoft's __FUNCSIG__ by default, we really only
+// need to check for CLANG AND GCC when WIN32 isn't defined
+	// WIN32 or _WIN32?
+
+#if !defined(WIN32)
+	#if defined(__clang__) || defined(__GNUC__)
 		#define __FUNCSIG__ __PRETTY_FUNCTION__
 	#else 
-		#ifdef __func__ // not a macro so not defined?
-			#define __FUNCSIG__ __func__
-		#else
-			#ifdef __FUNCTION__
-				#define __FUNCSIG__ __FUNCTION__
-			#else
-				#define __FUNCSIG__ "<Function name macro error>"
-			#endif // __FUNCTION__
-		#endif // __func__
-	#endif // __PRETTY_FUNCTION__
-#endif //__FUNCSIG__
+		#define __FUNCSIG__ __FUNCTION__ // sources online say __FUNCTION__ should work pretty much everywhere
+	#endif // __clang__ || __GNUC__
+#endif // !WIN32
 
-
+// If the code isn't compiling because __FUNCSIG__ isn't defined, uncomment the line below
+//#define __FUNCSIG__  "<Function name macro error>"
 
 
 /****************************************************************************
