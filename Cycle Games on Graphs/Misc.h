@@ -167,6 +167,8 @@ inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_
 * - Takes in a pointer to an ALREADY OPEN std::fstream and returns the length
 * of the file in bytes
 * - Any iostream errors/ flags set before the function call will be cleared
+* - the position of the file reader will be set back to the beginning 
+* after the call
 *
 * Parameters :
 * - file : pointer to the fstream in question
@@ -174,6 +176,8 @@ inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_
 * Returns :
 * - size_t : the length in bytes of the file
 ****************************************************************************/
+// is there a way to save the initial position in the file and later restore it 
+// in a way that the gcc compiler doesn't flip out on us?
 size_t get_file_length(std::fstream* file)
 {
 	if (!(*file).is_open())
@@ -182,12 +186,10 @@ size_t get_file_length(std::fstream* file)
 			"The supplied file stream is not open.");
 		return 0;
 	}
-	//std::streampos pos = (*file).tellg(); 
-	size_t pos = (size_t)(*file).tellg(); // save the initial position so we can return the file back to the caller unchanged
 	(*file).ignore(std::numeric_limits<std::streamsize>::max());
 	size_t file_length = (size_t)(*file).gcount();
 	(*file).clear(); // clear the EOF bit set by our going to the end of the file, any other errors
-	(*file).seekg(0, /*(std::ios_base::seekdir)*/pos); // set the position back to where the caller had it because we're courteous like that
+	(*file).seekg(0, std::fstream::beg);
 	return file_length;
 }
 

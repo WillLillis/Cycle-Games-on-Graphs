@@ -728,7 +728,11 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 		{
 			file_name.append(",");
 		}
+#ifdef WIN32
 		file_name.append(std::to_string(va_arg(arg_ptr, uint_fast16_t)));
+#else
+		file_name.append(std::to_string(va_arg(arg_ptr, uint32_t))); // gcc does NOT like you passing uint_fast16_t to va_arg, we'll try this
+#endif // WIN32
 	}
 	va_end(arg_ptr);
 	file_name.append(").txt");
@@ -822,7 +826,7 @@ void user_generalized_petersen_gen()
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else 
 	int err = 0;
-	output = fopen(result_path.string().c_str(), "w");
+	output = fopen(output_path.string().c_str(), "w");
 #endif // WIN32
 
 #ifdef WIN32
@@ -834,7 +838,7 @@ void user_generalized_petersen_gen()
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
-	if (err == NULL)
+	if (output == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str(), err);
