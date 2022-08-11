@@ -7,6 +7,7 @@
 #pragma once
 #include <cstdarg>
 #include <cmath>
+#include <stdio.h>
 
 /*
 *
@@ -15,9 +16,9 @@
 * 
 */
 
-// can clean this up with #elif?
-
 // After a bunch of digging online I finally found this:
+// https://stackoverflow.com/questions/2989810/which-cross-platform-preprocessor-defines-win32-or-win32-or-win32 
+// which linked this:
 // https://web.archive.org/web/20140625123200/http://nadeausoftware.com/articles/2012/10/c_c_tip_how_detect_compiler_name_and_version_using_compiler_predefined_macros
 
 // It seems reasonable to only worry about the Miscrosoft, GCC, and CLANG compilers,
@@ -36,6 +37,9 @@
 
 // If the code isn't compiling because __FUNCSIG__ isn't defined, uncomment the line below
 //#define __FUNCSIG__  "<Function name macro error>"
+
+
+
 
 
 /****************************************************************************
@@ -63,10 +67,10 @@
 ****************************************************************************/
 void display_error(const char* file_name, int line_num, const char* func_sig, bool user_clear, const char* err_msg, ...)
 {
+	printf("ERROR: ");
+
 	va_list arg_ptr;
 	va_start(arg_ptr, err_msg);
-
-	printf("ERROR: ");
 	vprintf(err_msg, arg_ptr);
 	va_end(arg_ptr);
 
@@ -79,6 +83,30 @@ void display_error(const char* file_name, int line_num, const char* func_sig, bo
 		printf("Press [ENTER] to continue...\n");
 		char throw_away = std::getchar();
 	}
+}
+
+/****************************************************************************
+* clear_screen
+*
+* - Clears the console's screen by calling the relevant OS's clear screen 
+* command
+*
+* Parameters :
+* - none
+*
+* Returns :
+* - none
+****************************************************************************/
+void inline clear_screen()
+{
+#if defined(WIN32)
+	system("cls");
+#elif  defined(__linux__) || defined(__unix__) || defined(__APPLE__) || defined(__MACH__)
+	system("clear");
+#else
+	display_error(__FILE__, __LINE__, __FUNCSIG__, false, 
+		"Failed to clear the screen. Unable to identify operating system in use.");
+#endif // WIN32
 }
 
 /****************************************************************************
@@ -170,6 +198,12 @@ inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_
 * - Any iostream errors/ flags set before the function call will be cleared
 * - the position of the file reader will be set back to the beginning 
 * after the call
+* - https://stackoverflow.com/questions/2409504/using-c-filestreams-fstream-how-can-you-determine-the-size-of-a-file
+* - Would like to just use std::filesystem::file_size(), but it reports a 
+* different value than this function, and this function is working properly
+* as far as I can tell
+*	- maybe it's reading in the size from the OS's inode, which might include
+*	reserved space as in addition to the space actually used by the file
 *
 * Parameters :
 * - file : pointer to the fstream in question

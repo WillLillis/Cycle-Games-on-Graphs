@@ -294,7 +294,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	bool bad_input = false;
 	std::string game_select_raw;
 	uint_fast16_t game_select = 3;
-	system("cls");
+	clear_screen();
 	printf("Select the game to play:\n");
 	printf("[0] MAC\n");
 	printf("[1] AAC\n");
@@ -569,7 +569,7 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 
 	while (true)
 	{
-		system("cls");
+		clear_screen();
 		// is having the full path helpful?
 		printf("%s\n", curr_dir.string().c_str()); // print the current directory so the user knows where they are
 		printf("Select a [FILE] to play on, or a [DIR] to open.\n");
@@ -671,7 +671,7 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 ****************************************************************************/
 void play_menu()
 {
-	system("cls");
+	clear_screen();
 	std::filesystem::path adj_path;
 
 	if (!verify_adj_info_path(&adj_path, true)) // make sure the adjacency info directory is there
@@ -728,10 +728,12 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 		{
 			file_name.append(",");
 		}
-#ifdef WIN32
+#ifdef WIN32 
 		file_name.append(std::to_string(va_arg(arg_ptr, uint_fast16_t)));
 #else
-		file_name.append(std::to_string(va_arg(arg_ptr, uint32_t))); // gcc does NOT like you passing uint_fast16_t to va_arg, we'll try this
+		// gcc does NOT like you passing uint_fast16_t to va_arg, we'll try this (issue seems to be integer promotion)
+		// didn't see a straightforward way with C++ to do variable arguments, so we'll just go with this for now
+		file_name.append(std::to_string(va_arg(arg_ptr, int)));
 #endif // WIN32
 	}
 	va_end(arg_ptr);
@@ -776,7 +778,7 @@ void user_generalized_petersen_gen()
 
 	do 
 	{
-		system("cls");
+		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
 			avail_graphs[GEN_PET_ENTRY].graph_name.c_str());
 
@@ -886,7 +888,7 @@ void user_stacked_prism_gen()
 
 	do
 	{
-		system("cls");
+		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
 			avail_graphs[GEN_PET_ENTRY].graph_name.c_str());
 
@@ -993,7 +995,7 @@ void user_z_mn_gen()
 
 	do
 	{
-		system("cls");
+		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
 			avail_graphs[Z_MN_ENTRY].graph_name.c_str());
 
@@ -1102,7 +1104,7 @@ void generate_menu()
 		graph_choice = NUM_GRAPH_FAMS + 1;
 		do 
 		{
-			system("cls");
+			clear_screen();
 			printf("Select which type of graph you'd like to generate an adjacency listing for.\n");
 			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_GRAPH_FAMS; curr_choice++)
 			{
@@ -1158,7 +1160,7 @@ void main_menu()
 		menu_choice = 3; // have to reset this value for new pass
 		do
 		{
-			system("cls");
+			clear_screen();
 			
 			printf("[0] Play a game\n");
 			printf("[1] Generate an Adjacency Listing\n");
