@@ -99,7 +99,7 @@ void display_error(const char* file_name, int line_num, const char* func_sig, bo
 ****************************************************************************/
 void inline clear_screen()
 {
-#if defined(WIN32)
+#if defined(_WIN32) || defined(_WIN64)
 	system("cls");
 #elif  defined(__linux__) || defined(__unix__) || defined(__APPLE__) || defined(__MACH__)
 	system("clear");
