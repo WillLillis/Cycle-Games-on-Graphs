@@ -416,6 +416,9 @@ void user_plays(std::filesystem::path adj_info_path)
 		return;
 	}
 
+	// Have to mark the starting node as used!
+	node_use[node_select] = USED;
+
 	GAME_STATE game_result;
 	if (output_select == 0) // Quiet 
 	{

@@ -118,7 +118,6 @@ void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ..
 	fprint_indent(output, num_indent);
 
 	va_list argptr;
-
 	va_start(argptr, format);
 	vfprintf(output, format, argptr);
 	va_end(argptr);
@@ -153,7 +152,7 @@ void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, uint_fast16_t* mo
 	fprintf(output, "%hhu", move_hist[0]); // making the assumption there's at least one entry
 	for (uint_fast16_t i = 1; i <= recur_depth; i++)
 	{
-		fprintf(output, "->%hhu", move_hist[i]);
+		fprintf(output, "->%hhu", (uint16_t)move_hist[i]); // added cast to provide consistent operation, regardless of what the compiler decided for uint_fast16_tss
 	}
 }
 
@@ -187,9 +186,8 @@ GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 		return ERROR_STATE;
 	}
 
-	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
 	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from curr_node
-	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
+	GAME_STATE move_result; // temporarily store the result of a recursive call here
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++)
 	{
@@ -267,7 +265,6 @@ GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, uint_fast16_t recur_depth, FILE* output)
 {
-
 	if (adj_matrix == NULL || edge_use_matrix == NULL 
 		|| node_use_list == NULL || move_hist == NULL)
 	{
@@ -276,9 +273,8 @@ GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 		return ERROR_STATE;
 	}
 
-	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
 	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from curr_node
-	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
+	GAME_STATE move_result; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history
 
 	progress_log(output, recur_depth, "%s Reached node %hhu\n", recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node);
@@ -379,8 +375,7 @@ GAME_STATE play_AAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 		return ERROR_STATE;
 	}
 	
-	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
-	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
+	GAME_STATE move_result; // temporarily store the result of a recursive call here
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++)
 	{
@@ -445,8 +440,7 @@ GAME_STATE play_AAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 		return ERROR_STATE;
 	}
 	
-	node_use_list[curr_node] = USED; // need to account for marking the starting node as used
-	GAME_STATE move_result = 0; // temporarily store the result of a recursive call here
+	GAME_STATE move_result; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history
 
 	progress_log(output, recur_depth, "%s Reached node %hhu\n", recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node);

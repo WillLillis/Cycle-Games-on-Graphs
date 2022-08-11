@@ -25,7 +25,7 @@
 // but if we need to add more later on, then we can do so
 // Since we're using Microsoft's __FUNCSIG__ by default, we really only
 // need to check for CLANG AND GCC when WIN32 isn't defined
-	// WIN32 or _WIN32?
+	// WIN32 or _WIN32?-> WIN32 for the compiler, _WIN32 for the OS?
 
 #if !defined(WIN32)
 	#if defined(__clang__) || defined(__GNUC__)
@@ -37,10 +37,6 @@
 
 // If the code isn't compiling because __FUNCSIG__ isn't defined, uncomment the line below
 //#define __FUNCSIG__  "<Function name macro error>"
-
-
-
-
 
 /****************************************************************************
 * display_error
@@ -56,7 +52,8 @@
 * - line_num : the line number where the file occurred, grabbed using the 
 * __LINE__ macro
 * - func_sig : the signature of the function in which the error occurred, grabbed
-* using the __FUNCSIG__ macro
+* using the __FUNCSIG__ macro (or by whatever it's being used as an alias for, 
+* depending on the compiler)
 * - user_clear : indicates whether the user will have to provide an input in order
 * to clear/ continue past the error
 * - err_msg : format string for the user's custom error message

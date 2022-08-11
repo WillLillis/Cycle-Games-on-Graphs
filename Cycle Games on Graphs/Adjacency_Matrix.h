@@ -257,20 +257,20 @@ void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 	// outer ring connections to adjacent nodes around the ring
 	for (uint_fast16_t i = 0; i < n; i++)
 	{
-		fprintf(output, "%hhu,%hhu\n", i, (i + 1) % n);
+		fprintf(output, "%hhu,%hhu\n", (uint16_t)i, (uint16_t)((i + 1) % n));
 	}
 	// outer ring to inner ring "spokes"
 	for (uint_fast16_t i = 0; i < n; i++)
 	{
-		fprintf(output, "%hhu,%hhu\n", i, i + n);
+		fprintf(output, "%hhu,%hhu\n", (uint16_t)i, (uint16_t)(i + n));
 	}
 	// inner ring connections (ew)
 	for (uint_fast16_t i = n; i < (2 * n) - 1; i++)
 	{
-		fprintf(output, "%hhu,%hhu\n", i, ((i + k) % n) + n);
+		fprintf(output, "%hhu,%hhu\n", i, (uint16_t)(((i + k) % n) + n));
 	}
 	// also an inner ring connection
-	fprintf(output, "%hhu,%hhu", (2 * n) - 1, ((((2 * n) - 1) + k) % n) + n); // last entry does NOT get a newline char after it
+	fprintf(output, "%hhu,%hhu", (uint16_t)((2 * n) - 1), (uint16_t)(((((2 * n) - 1) + k) % n) + n)); // last entry does NOT get a newline char after it
 
 }
 
@@ -305,9 +305,9 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 	{
 		for (uint_fast16_t j = 0; j < m - 1; j++)
 		{
-			fprintf(output, "%hhu,%hhu\n", j + (i * m), j + 1 + (i * m));
+			fprintf(output, "%hhu,%hhu\n", (uint16_t)(j + (i * m)), (uint16_t)(j + 1 + (i * m)));
 		}
-		fprintf(output, "%hhu,%hhu", m - 1 + (i * m), i * m);
+		fprintf(output, "%hhu,%hhu", (uint16_t)(m - 1 + (i * m)), (uint16_t)(i * m));
 		if (i != (n - 1)) // doing this to avoid placing a newline char at the end of the file
 		{
 			fprintf(output, "\n");
@@ -316,7 +316,7 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 		{
 			for (uint_fast16_t k = 0; k < m; k++)
 			{
-				fprintf(output, "%hhu,%hhu\n", k + (i * m), k + ((i + 1) * m));
+				fprintf(output, "%hhu,%hhu\n", (uint16_t)(k + (i * m)), (uint16_t)(k + ((i + 1) * m)));
 			}
 		}
 	}
@@ -550,11 +550,11 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 			{
 				if (has_entry == true) // doing this to avoid a newline character at the end of the file
 				{
-					fprintf(output, "\n%hhu,%hhu", i, j);
+					fprintf(output, "\n%hhu,%hhu", (uint16_t)i, (uint16_t)j);
 				}
 				else
 				{
-					fprintf(output, "%hhu,%hhu", i, j);
+					fprintf(output, "%hhu,%hhu", (uint16_t)i, (uint16_t)j);
 
 				}
 				
