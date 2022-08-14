@@ -148,6 +148,11 @@ bool thread_game_info_reset(THREAD_GAME_INFO* old_struct, uint_fast16_t num_node
 // will block by design
 uint_fast16_t next_avail_thread(THREAD_GAME_INFO* thread_list, uint_fast16_t num_threads, uint_fast16_t starting_thread = 0)
 {
+	if (thread_list == NULL)
+	{
+		return num_threads + 1;
+	}
+
 	uint_fast16_t curr_thread = starting_thread;
 	while (true)
 	{
@@ -218,6 +223,10 @@ GAME_STATE MAC_threaded_rucur(uint_fast16_t curr_node, uint_fast16_t num_nodes, 
 			{
 				return ERROR_STATE;
 			}
+			if (move_result == KILL_STATE)
+			{
+				return KILL_STATE;
+			}
 		}
 	}
 
@@ -246,7 +255,7 @@ GAME_STATE play_MAC_threaded(uint_fast16_t starting_node, uint_fast16_t num_node
 		return ERROR_STATE;
 	}
 
-	const uint_fast16_t num_threads = std::thread::hardware_concurrency();
+	const uint_fast16_t num_threads = std::thread::hardware_concurrency(); // might want to tweak this...
 	THREAD_GAME_INFO* avail_threads = (THREAD_GAME_INFO*)malloc(num_threads * sizeof(THREAD_GAME_INFO));
 
 	if (avail_threads == NULL)
@@ -262,9 +271,9 @@ GAME_STATE play_MAC_threaded(uint_fast16_t starting_node, uint_fast16_t num_node
 		{
 			for (uint_fast16_t j = 0; j <= i; j++) // free everything else up and return an ERROR_STATE
 			{
-				thread_game_info_free(&avail_threads[i]);
-				return ERROR_STATE;
+				thread_game_info_free(&avail_threads[j]);
 			}
+			return ERROR_STATE;
 		}
 	}
 
@@ -286,6 +295,14 @@ GAME_STATE play_MAC_threaded(uint_fast16_t starting_node, uint_fast16_t num_node
 
 			// find the next available thread, and dispatch it to try out the move
 			curr_thread = next_avail_thread(avail_threads, num_threads, next_thread++);
+			if (curr_thread >= num_threads) // avail_threads was NULL
+			{
+				exit_reason = ERROR_STATE;
+				search_continue = false;
+				continue;
+			}
+			// false positive warning (C6385) from VS about buffer overrun (if block above makes sure we stay in the array)
+			#pragma warning(suppress:6385)
 			avail_threads[curr_thread].avail_for_use = false;
 			avail_threads[curr_thread].edge_use_matrix[index_translation(num_nodes, starting_node, curr_neighbor)] = USED;
 			avail_threads[curr_thread].edge_use_matrix[index_translation(num_nodes, curr_neighbor, starting_node)] = USED;
