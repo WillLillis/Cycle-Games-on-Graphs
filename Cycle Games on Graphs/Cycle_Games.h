@@ -34,12 +34,15 @@
 #include <fstream>
 #include <cstdarg>
 #include <cassert>
+#include <thread>
 
 // We'll define the game state in the following manner
 typedef int_fast16_t GAME_STATE;
 #define WIN_STATE		1
 #define LOSS_STATE		0
-#define ERROR_STATE		-1
+#define ERROR_STATE		-1 // Error reporting
+#define KILL_STATE		-2 // For multithreaded version
+#define RUN_STATE		-3 // ^
 
 typedef uint_fast8_t PLAYER_SIDE;
 #define PLAYER_1		1
@@ -485,3 +488,4 @@ GAME_STATE play_AAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 		recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node);
 	return LOSS_STATE;
 }
+
