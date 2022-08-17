@@ -179,7 +179,7 @@ void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, uint_fast16_t* mo
 * Returns :
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
-GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
+GAME_STATE play_MAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list)
 {
 	if (adj_matrix == NULL || edge_use_matrix == NULL || node_use_list == NULL)
@@ -265,8 +265,8 @@ GAME_STATE play_MAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 * Returns :
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
-GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
-	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, uint_fast16_t recur_depth, FILE* output)
+GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
+	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, const uint_fast16_t recur_depth, FILE* output)
 {
 	if (adj_matrix == NULL || edge_use_matrix == NULL 
 		|| node_use_list == NULL || move_hist == NULL)
@@ -368,7 +368,7 @@ GAME_STATE play_MAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_
 * Returns :
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
-GAME_STATE play_AAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
+GAME_STATE play_AAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list)
 {
 	if (adj_matrix == NULL || edge_use_matrix == NULL || node_use_list == NULL)
@@ -432,8 +432,8 @@ GAME_STATE play_AAC_quiet(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint
 * Returns :
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
-GAME_STATE play_AAC_loud(uint_fast16_t curr_node, uint_fast16_t num_nodes, uint_fast16_t* adj_matrix,
-	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, uint_fast16_t recur_depth, FILE* output)
+GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
+	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, uint_fast16_t* move_hist, const uint_fast16_t recur_depth, FILE* output)
 {
 	if (adj_matrix == NULL || edge_use_matrix == NULL
 		|| node_use_list == NULL || move_hist == NULL)
