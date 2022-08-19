@@ -144,7 +144,22 @@ bool thread_game_info_reset(THREAD_GAME_INFO* old_struct, uint_fast16_t num_node
 	return true;
 }
 
-
+/****************************************************************************
+* next_avail_thread
+*
+* - Takes in pointer to an array of THREAD_GAME_INFO structs, and returns 
+* the index to an available thread in the array
+*
+* Parameters :
+* - thread_list : pointer to an array of THREAD_GAME_INFO structs
+* - num_threads : the number of available threads, or really just the number of 
+* structs in the thread_list
+* - starting_thread : suggestion for which index to start looking for an open thread
+*
+* Returns :
+* - uint_fast16_t : the index of the available thread, num_threads + 1 is returned
+* in the case of an error
+****************************************************************************/
 uint_fast16_t next_avail_thread(THREAD_GAME_INFO* thread_list, uint_fast16_t num_threads, uint_fast16_t starting_thread = 0)
 {
 	if (thread_list == NULL)
@@ -163,7 +178,32 @@ uint_fast16_t next_avail_thread(THREAD_GAME_INFO* thread_list, uint_fast16_t num
 	}
 }
 
-// pretty much the quiet version of the regular game playing code, except we add in checks for the kill flag
+/****************************************************************************
+* MAC_threaded_rucur
+*
+* - Function called from MAC_threaded_dispatch, which is called from 
+* play_MAC_threaded
+* - pretty much the quiet version of the regular game playing code, with the 
+* only change being the inclusion of the kill_flag, which allows the top
+* level caller (play_MAC_threaded) to halt the execution of this thread early
+*
+* Parameters :
+* - curr_node : the node the game just moved to from the starting node, aka the
+* current node
+* - num_nodes : the number of nodes in the graph
+* - adj_matrix : pointer to an block of memory holding the adjency matrix for
+* the graph in question
+* - edge_use_matrix : pointer to an block of memory keeping track of which edges
+* have been used so far in the game
+* - node_use_list : pointer to a block of memory keeping track of which nodes have
+* been used so far in the game
+* - kill_flag : flag shared with top level caller. If set to true, function will 
+* halt execution once detected and return a KILL_STATE all the way back up the 
+* recursive chain
+*
+* Returns :
+* - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
+****************************************************************************/
 GAME_STATE MAC_threaded_rucur(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, const volatile bool* kill_flag)
 {
@@ -233,8 +273,26 @@ GAME_STATE MAC_threaded_rucur(const uint_fast16_t curr_node, const uint_fast16_t
 	return LOSS_STATE;
 }
 
-// function called directly from the top level
-// used for calling the recursive game code, but then getting that result and sending it back up via the return_val param
+/****************************************************************************
+* MAC_threaded_dispatch
+*
+* - Function called from play_MAC_threaded
+* - Necessary as threads could only be spawned with void return type, so we
+* needed a translation between the regular recursive game code and the thread
+* spawn
+*
+* Parameters :
+* - curr_node : the node the game just moved to from the starting node, aka the 
+* current node
+* - num_nodes : the number of nodes in the graph
+* - adj_matrix : pointer to an block of memory holding the adjency matrix for
+* the graph in question
+* - thread_materials : pointer to a THREAD_GAME_INFO struct specific to this 
+* thread of execution only
+*
+* Returns :
+* - none
+****************************************************************************/
 void MAC_threaded_dispatch(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix, 
 	THREAD_GAME_INFO* thread_materials)
 {
@@ -243,6 +301,27 @@ void MAC_threaded_dispatch(const uint_fast16_t curr_node, const uint_fast16_t nu
 		thread_materials->edge_use_matrix, thread_materials->node_use_list, thread_materials->kill_flag);
 }
 
+/****************************************************************************
+* play_MAC_threaded
+*
+* - Driver function to play the MAC game in a multi-threaded manner
+* - Simply spawns off threads to recursively try out moves in parallel, then
+* manages their return values
+*
+* Parameters :
+* - starting_node : the node to start the game on
+* - num_nodes : the number of nodes in the graph
+* - adj_matrix : pointer to an block of memory holding the adjency matrix for 
+* the graph in question
+* - edge_use_matrix : pointer to an block of memory keeping track of which edges
+* have been used so far in the game
+* - node_use_list : pointer to a block of memory keeping track of which nodes have
+* been used so far in the game
+*
+* Returns :
+* - GAME_STATE : the state of the game for player 1 in the graph's starting
+* configuration
+****************************************************************************/
 GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list)
 {

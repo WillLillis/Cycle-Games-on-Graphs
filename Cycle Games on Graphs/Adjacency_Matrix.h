@@ -19,7 +19,7 @@
 #define MAX_ELEMENTS	500 // arbitrary max value, feel free to increase if needed
 
 // Used within Cycle_Games.h, but made sense categorically to #define these in here
-typedef uint_fast8_t Adjacency_Info;
+typedef uint_fast16_t Adjacency_Info;
 #define ADJACENT		1
 #define NOT_ADJACENT	0
 
@@ -74,18 +74,32 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	data_stream.read(data, file_length); // read the file's contents into the data buffer
 	data_stream.close();
 
+	// Need to find the largest node number in the data so that we can allocate the buffer for the adjacency matrix
 	uint_fast16_t temp_label;
 	uint_fast16_t max_label = 0;
-	// Need to find the largest node number in the data so that we can allocate the buffer for the adjacency matrix
-	// skip over the labels in the first line
+	
 	size_t data_start = 0;
-	while (data_start < file_length && data[data_start] != '\n')
+	while (data_start < file_length && data[data_start] != '\n') // skip over the labels in the first line
 	{
 		data_start++;
 	}
-	data_start++; // increment one more time to get past that first newline character
+	if (data_start > 0)
+	{
+		data_start++; // increment one more time to get past that first newline character
+	}
+	else // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
+	{
+		if (data != NULL)
+		{
+			free(data);
+		}
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
+		return NULL;
+	}
 	size_t curr = data_start;
-
+	// Get rid of this assert
+	// Check why we're getting an error
 	assert(curr < file_length); // assert necessary to make VS warning go away
 	while (curr < file_length)
 	{

@@ -76,7 +76,7 @@ GRAPH_GEN_INFO avail_graphs[] = {
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
 //#define ALT_RESULT_PATH		"C:\\Users\\willl\\Desktop\\Results"				// ^
 
-#define ERRNO_STRING_LEN	200 // arbitrary max value for Microsoft's error messages
+#define ERRNO_STRING_LEN	200 // arbitrary max value for Microsoft's error messages, as it appears that strerrorlen_s isn't defined on my machine/ platform
 
 /****************************************************************************
 * print_game_results
@@ -286,7 +286,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	if (!(num_nodes > 0))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hhu", (int16_t)num_nodes);
+			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hhu", (uint16_t)num_nodes);
 		return;
 	}
 
