@@ -41,7 +41,7 @@ typedef struct THREAD_GAME_INFO {
 	uint_fast16_t* node_use_list = NULL;
 	GAME_STATE* return_val = NULL;
 	bool* kill_flag = NULL;
-	bool avail_for_use = true;
+	volatile bool avail_for_use = true;
 }THREAD_GAME_INFO;
 
 bool thread_game_info_init(THREAD_GAME_INFO* new_struct, uint_fast16_t num_nodes, uint_fast16_t starting_node)
@@ -144,7 +144,7 @@ bool thread_game_info_reset(THREAD_GAME_INFO* old_struct, uint_fast16_t num_node
 	return true;
 }
 
-// will block by design
+
 uint_fast16_t next_avail_thread(THREAD_GAME_INFO* thread_list, uint_fast16_t num_threads, uint_fast16_t starting_thread = 0)
 {
 	if (thread_list == NULL)
@@ -152,7 +152,7 @@ uint_fast16_t next_avail_thread(THREAD_GAME_INFO* thread_list, uint_fast16_t num
 		return num_threads + 1; // is there a better way to indicate an error occurred here?
 	}
 
-	uint_fast16_t curr_thread = starting_thread < num_threads ? starting_thread : 0;
+	uint_fast16_t curr_thread = starting_thread < num_threads ? starting_thread : 0; // if an invalid number is given for starting_thread, we start the search at 0
 	while (true)
 	{
 		if (thread_list[curr_thread].avail_for_use) // just reading, so shouldn't have to worry about mutexes and whatnot
@@ -243,7 +243,6 @@ void MAC_threaded_dispatch(const uint_fast16_t curr_node, const uint_fast16_t nu
 		thread_materials->edge_use_matrix, thread_materials->node_use_list, thread_materials->kill_flag);
 }
 
-
 GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
 	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list)
 {
@@ -254,7 +253,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 		return ERROR_STATE;
 	}
 
-	const uint_fast16_t num_threads = std::thread::hardware_concurrency(); // might want to tweak this...
+	const uint_fast16_t num_threads = std::thread::hardware_concurrency(); // might want to tweak this...-> we'll run some benchmarks with different values once we get the basics working
 	THREAD_GAME_INFO* avail_threads = (THREAD_GAME_INFO*)malloc(num_threads * sizeof(THREAD_GAME_INFO));
 
 	if (avail_threads == NULL)
@@ -277,30 +276,31 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 	}
 
 	// if we got to this point everything succeeded, time to do some dispatching
-	uint_fast16_t next_thread = 0; // just a suggestion
-	uint_fast16_t curr_thread = 0;
+	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from starting_node
+	uint_fast16_t next_thread = 0; // variable acts as a suggestion for the next thread to use, really just helpful for the first time through...
+	uint_fast16_t curr_thread = 0; // the actual thread being dispatched
 	bool search_continue = true;
-	GAME_STATE exit_reason = RUN_STATE; // the state we found recursively that caused us to exit the main move loop
+	GAME_STATE exit_reason = RUN_STATE; // the state we found recursively that caused us to exit the main "move" loop
 
-	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes && search_continue; curr_neighbor++)
+	for (uint_fast16_t curr_neighbor = 0; (curr_neighbor < num_nodes) && search_continue; curr_neighbor++)
 	{
 		// if curr_node and curr_neighbor are adjacent
-		if (adj_matrix[index_translation(num_nodes, starting_node, curr_neighbor)] == ADJACENT) // don't need to check edge usage since this is the top level
+		if (adj_matrix[index_translation(num_nodes, starting_node, curr_neighbor)] == ADJACENT) // don't need to check edge usage since this is the top level (no moves yet-> no edges used yet)
 		{
+			open_edges++;
 			// find the next available thread, and dispatch it to try out the move
-			curr_thread = next_avail_thread(avail_threads, num_threads, next_thread++);
-			if (curr_thread >= num_threads) // only if avail_threads was NULL
+			if((curr_thread = next_avail_thread(avail_threads, num_threads, next_thread++)) >= num_threads)
 			{
 				exit_reason = ERROR_STATE;
 				search_continue = false;
-				continue;
+				break;
 			}
-			// false positive warning (C6385) from VS about buffer overrun (if block above makes sure we stay in the array)
-			#pragma warning(suppress:6385)
+			// false positive warning (C6386) from VS about buffer overrun (if block above makes sure we stay in the array)
+			#pragma warning(suppress:6386)
 			avail_threads[curr_thread].avail_for_use = false;
 			avail_threads[curr_thread].edge_use_matrix[index_translation(num_nodes, starting_node, curr_neighbor)] = USED;
 			avail_threads[curr_thread].edge_use_matrix[index_translation(num_nodes, curr_neighbor, starting_node)] = USED;
-			//avail_threads[curr_thread].node_use_list[curr_neighbor] = USED; // should be taken care of in init function, then never overwritten
+			avail_threads[curr_thread].node_use_list[curr_neighbor] = USED; 
 			*(avail_threads[curr_thread].return_val) = RUN_STATE;
 			avail_threads[curr_thread].thread = std::thread(MAC_threaded_dispatch, curr_neighbor, num_nodes, adj_matrix, &avail_threads[curr_thread]);
 		}
@@ -327,7 +327,10 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 				}
 				else if (*(avail_threads[i].return_val) == WIN_STATE) // we don't care, clean the thread up and set it as ready for the next dispatch
 				{
-					avail_threads[i].thread.join(); // should join immediately
+					if (avail_threads[i].thread.joinable())
+					{
+						avail_threads[i].thread.join(); // should join immediately
+					}
 					if (!thread_game_info_reset(&avail_threads[i], num_nodes, starting_node)) // make sure the reset was successful
 					{
 						exit_reason = ERROR_STATE;
@@ -351,6 +354,13 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 	}
 
 	GAME_STATE return_val = ERROR_STATE;
+
+	// if open_edges == 0, then no threads were dispatched...
+	if (open_edges == 0)
+	{
+		return_val = LOSS_STATE; // game is in a LOSS_STATE...
+		exit_reason = WIN_STATE; //...because all we found was WIN_STATE's for the other player
+	}
 
 	if (exit_reason == RUN_STATE) // we still have active threads that we care about
 	{
@@ -406,7 +416,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 					}
 				}
 			}
-			if (threads_left == 0) // only way to reach here is if all the threads returned WIN_STATE/ were already joined before we entered the loop
+			if (threads_left == 0) // only way to reach here is if all the threads returned WIN_STATE
 			{
 				return_val = LOSS_STATE;
 				break;
@@ -426,10 +436,11 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 	// clean up code
 	for (uint_fast16_t i = 0; i < num_threads; i++) // for all of the threads that may still be running
 	{
+		#pragma warning(suppress:6385)
 		if (avail_threads[i].avail_for_use == false) // if the thread is currently running/ hasn't been cleaned up yet
 		{
 			*(avail_threads[i].kill_flag) = true; // send the kill signal out
-			if (avail_threads[i].thread.joinable())
+			if (avail_threads[i].thread.joinable()) 
 			{
 				avail_threads[i].thread.join(); // wait for it to join
 			}

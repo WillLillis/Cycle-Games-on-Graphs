@@ -42,7 +42,6 @@ typedef uint_fast8_t Adjacency_Info;
 * - uint_fast16_t* : pointer to a buffer of size 
 * (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
-// Might want to add functionality for reading in adjacency matrices directly later on
 // Need to add ability to read in adjacency matrices
 uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out)
 {
@@ -395,7 +394,7 @@ uint_fast16_t tuple_diff(uint_fast16_t* tuple_1, uint_fast16_t* tuple_2, uint_fa
 
 	for (uint_fast16_t entry = 0; entry < num_entries; entry++)
 	{
-		// cast to regular uint16_t necessary, otherwise VS complains about 
+		// cast to regular int16_t necessary, otherwise VS complains about 
 		// "more than one instance of overloaded function matches the argument list
 		diff += std::abs((int16_t)((int16_t)tuple_1[entry] - (int16_t)tuple_2[entry]));
 	}

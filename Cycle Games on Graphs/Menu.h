@@ -36,12 +36,10 @@
 * listing for it and write said listing to a file
 * 
 * In order to add a graph to generate in the code base, basically all you'll have to do
-* besides writing the generating function will be to add an instance of the below struct
+* besides writing the generating and user generate function (takes in user input for the graph
+* parameters and calls the generating function) will be to add an instance of the below struct
 * representing it into the avail_graphs array, add a #define for the entry number in the
 * array, and increase the NUM_GRAPH_FAMS definition accordingly
-* 
-* (TO BE IMPLEMENTED) Generated graphs will be placed in folders according to their graph
-* family name
 * 
 */
 // have to declare (but not define) the functions up here so that they
@@ -51,13 +49,13 @@ void user_stacked_prism_gen();
 void user_z_mn_gen();
 
 // Visual stido is giving me warnings that the above functions don't 
-// have definitions, even though they're clearly defined farther down in the file'
+// have definitions, even though they're clearly defined farther down in the file
 // the code still compiles and runs, but I'd really like to know how to fix this
 
 typedef struct GRAPH_GEN_INFO {
-	std::string graph_name;
-	std::string graph_file_name;
-	void (*gen_func)();
+	std::string graph_name{};
+	std::string graph_file_name{};
+	void (*gen_func)() = NULL;
 	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
 }GRAPH_GEN_INFO;
 
@@ -77,6 +75,8 @@ GRAPH_GEN_INFO avail_graphs[] = {
 // Leave commented out if you want files in the project's working directory
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
 //#define ALT_RESULT_PATH		"C:\\Users\\willl\\Desktop\\Results"				// ^
+
+#define ERRNO_STRING_LEN	200 // arbitrary max value for Microsoft's error messages
 
 /****************************************************************************
 * print_game_results
@@ -113,7 +113,7 @@ void inline print_game_results(GAME_STATE p1_result)
 * Parameters :
 * - result_path : if a valid directory is found/ created, its path is passed
 * out by reference using this parameter
-* - fail_on_create : specifies whether to return an error if the "Adjacency 
+* - fail_on_create : specifies whether to return an error (false) if the "Adjacency 
 * Information" directory has to be created
 * - sub_dir_graph_gam : which graph family subdirectory to search for if 
 * specified. If not, there is no search past the "Adjacency_Information" 
@@ -134,7 +134,6 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 #else // otherwise we'll do things in the project's current directory
 	adj_path_temp = std::filesystem::current_path();
 	adj_path_temp.append("Adjacency_Information");
-	// just add the graph fam name here with an append?-> won't know which failed, but maybe that's ok
 #endif // ALT_ADJ_PATH
 
 	std::filesystem::directory_entry adj_dir(adj_path_temp);
@@ -156,26 +155,27 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 			return false;
 		}
 #endif // ALT_ADJ_PATH
-		printf("Press [ENTER] to continue...\n");
+		printf("Done.\nPress [ENTER] to continue...\n");
 		char throw_away = std::getchar();
 		return !fail_on_create; // if fail_on_create is true, we need to return false
+		// there's no reason to continue past this point, beacuse if the "Adjacency_Information" directory wasn't found, then there's no files that can be loaded and played on
 	}
 
 	// otherwise the Adjacency_Information directory exists...now it's time to check for graph family-specific sub directories
-	std::filesystem::path graph_sub_path;
+	std::filesystem::path graph_fam_subpath;
 	if (sub_dir_graph_fam >= 0 && sub_dir_graph_fam < NUM_GRAPH_FAMS) // if the specified graph family parameter is valid
 	{
-		graph_sub_path = adj_path_temp;
-		graph_sub_path.append(avail_graphs[sub_dir_graph_fam].graph_file_name);
-		std::filesystem::directory_entry graph_sub_dir(graph_sub_path);
-		if (graph_sub_dir.exists())
+		graph_fam_subpath = adj_path_temp;
+		graph_fam_subpath.append(avail_graphs[sub_dir_graph_fam].graph_file_name);
+		std::filesystem::directory_entry graph_fam_subdir(graph_fam_subpath);
+		if (graph_fam_subdir.exists())
 		{
-			*adj_path = graph_sub_path;
+			*adj_path = graph_fam_subpath;
 			return true;
 		}
 	}
 	
-	// if it's invalid or if the graph family's folder doesn't exist, just stick the file in the adjacency 
+	// if it's invalid or if the graph family's folder doesn't exist, just stick the file in the Adjacency_Information directory
 	*adj_path = adj_path_temp;
 	return true;
 }
@@ -208,7 +208,7 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 	std::filesystem::path result_path_temp;
 
 #ifdef ALT_RESULT_PATH
-	result_path = std::filesystem::path(ALT_RESULT_PATH);
+	result_path_temp = std::filesystem::path(ALT_RESULT_PATH);
 #else
 	result_path_temp = std::filesystem::current_path();
 	result_path_temp.append("Results");
@@ -220,7 +220,7 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 	{
 #ifdef ALT_RESULT_PATH // if the user supplied their own directory for their results, tell them there's something wrong with it
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Unable to find the \"Results\" directory.\nThe alternate directory variable is defined, make sure you supplied a valid path.\n Requested path: %s", result_path.string().c_str());
+			"Unable to find the \"Results\" directory.\nThe alternate directory variable is defined, make sure you supplied a valid path.\n Requested path: %s", result_path_temp.string().c_str());
 		return false;
 #else
 		printf("WARNING: Unable to find the \"Results\" directory.\n");
@@ -234,9 +234,9 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 		}
 		else // otherwise we're good 
 		{
+			*result_path = result_path_temp;
 			printf("Done.\nPress [ENTER] to continue\n");
 			char throw_away = std::getchar();
-			*result_path = result_path_temp;
 			return !fail_on_create;
 		}
 #endif // ALT_RESULT_PATH
@@ -265,7 +265,7 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 ****************************************************************************/
 // this is kind of long...look for ways to break up?
 // want to change [BACK] options to go back a step in param selection, instead of back to the file selection page?
-// also needs LOTS of testing....
+// also needs LOTS of testing...->seems to be working?
 void user_plays(std::filesystem::path adj_info_path)
 {
 	if (!std::filesystem::directory_entry(adj_info_path).exists())
@@ -276,7 +276,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	}
 
 	uint_fast16_t num_nodes = 0; 
-	uint_fast16_t* adj_info = load_adjacency_info(adj_info_path, &num_nodes);
+	uint_fast16_t* adj_info = load_adjacency_info(adj_info_path, &num_nodes); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
 	if (adj_info == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
@@ -286,7 +286,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	if (!(num_nodes > 0))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information");
+			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hhu", (int16_t)num_nodes);
 		return;
 	}
 
@@ -296,9 +296,10 @@ void user_plays(std::filesystem::path adj_info_path)
 	uint_fast16_t game_select = 3;
 	clear_screen();
 	printf("Select the game to play:\n");
-	printf("[0] MAC\n");
-	printf("[1] AAC\n");
-	printf("[2] [BACK]\n");
+	printf("[0] MAC\n"); // change to "Make-A-Cycle (MAC)" ??
+	printf("[1] AAC\n"); // change to "Avoid-A-Cycle (AAC)" ??
+	//printf("[2] GG\n"); // GG for Generalized Geography?
+	printf("[2] [BACK]\n"); // would have to change to [3]-> want to have a NUM_GAMES define somewhere maybe-> could do a similar struct/ array combo as with the graph families...
 	do
 	{
 		if (bad_input)
@@ -350,16 +351,13 @@ void user_plays(std::filesystem::path adj_info_path)
 	} while (!(output_select >= 0 && output_select <= 2));
 
 	// if the user asked for a loud run, make sure the results directory is all set up
-	
-	
 	std::filesystem::path result_path;
 	if (output_select == 1)
 	{
-		//std::filesystem::directory_entry dir;
 		if (!verify_results_path(&result_path, false))
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Failed to find and/ or create the \"Results\" sub directory.");
+				"Failed to find and/ or create the \"Results\" sub-directory to store the results of the loud run.");
 			return;
 		}
 	}
@@ -392,7 +390,8 @@ void user_plays(std::filesystem::path adj_info_path)
 		}
 	} while (!(node_select >= 0 && node_select < num_nodes));
 
-	
+	// Now that all of the options have been specified, it's time to set up to actually play the game as requested
+
 	uint_fast16_t* edge_use = (uint_fast16_t*)calloc(num_nodes * num_nodes, sizeof(uint_fast16_t));
 	uint_fast16_t* node_use = (uint_fast16_t*)calloc(num_nodes, sizeof(uint_fast16_t));
 	if (edge_use == NULL)
@@ -419,6 +418,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	// Have to mark the starting node as used!
 	node_use[node_select] = USED;
 
+	// implementing the struct array thing here would clean this up a bit
 	GAME_STATE game_result;
 	if (output_select == 0) // Quiet 
 	{
@@ -449,6 +449,7 @@ void user_plays(std::filesystem::path adj_info_path)
 			return;
 		}
 
+		// do we want to shove the file name generation inside a function?
 		FILE* result_stream;
 		std::string file_name = adj_info_path.stem().string();
 		file_name.append(game_select == 0 ? " -MAC- " : " -AAC- ");
@@ -458,28 +459,26 @@ void user_plays(std::filesystem::path adj_info_path)
 		result_path.append(file_name);
 		// want to add some sort of versioning here so we don't automatically overwrite old files?
 
-#ifdef WIN32 // non-Windows way to set errno?
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 		_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 		errno_t err = fopen_s(&result_stream, result_path.string().c_str(), "w"); 
 #else
-		int err = 0;
 		result_stream = fopen(result_path.string().c_str(), "w");
-#endif // WIN32
+#endif // _WIN32
 
-#ifdef WIN32
+#ifdef _WIN32
 		if (err != 0)
 		{
-
-			char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
-			strerror_s(err_buff, 94, NULL);
+			char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
+			strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", result_path.string().c_str(), err_buff);
 #else
 		if (result_stream == NULL)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", result_path.string().c_str(), err);
-#endif // WIN32
+				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
+#endif // _WIN32
 
 			if (node_use != NULL)
 			{
@@ -542,10 +541,9 @@ void user_plays(std::filesystem::path adj_info_path)
 /****************************************************************************
 * play_menu_subdir
 *
-* - Function called when the user elects to play a game in the main menu
-* - Does some checks on the adjacency information files, before then calling
-* play_menu_subdir to allow the user to browse through all of the adjacency
-* information files
+* - Allows the user to browse in a sub-directory of "Adjacency_Information"
+* in order to look for a file to play a game on
+* - Calls itself recursively to open additionally nested sub-directories
 *
 * Parameters :
 * - curr_dir : the current directory that this call of the function will browse 
@@ -554,7 +552,6 @@ void user_plays(std::filesystem::path adj_info_path)
 * Returns :
 * - none
 ****************************************************************************/
-// do we want a file naming option?
 void play_menu_subdir(std::filesystem::path curr_dir)
 {
 	if (!std::filesystem::directory_entry(curr_dir).exists())
@@ -567,8 +564,8 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 	uint_fast16_t entry_index = 0;
 	std::filesystem::path temp_path = curr_dir;
 	bool bad_selection = false;
-	uint_fast16_t file_selection = entry_index;
 	std::string file_selection_raw;
+	uint_fast16_t file_selection;
 
 	while (true)
 	{
@@ -598,9 +595,7 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 		printf("[%03hhu][BACK]\n", entry_index);
 
 		file_selection = entry_index + 1; // initially unacceptable value 
-		file_selection_raw;
 		bad_selection = false;
-		// way to clear only the last line?
 		do
 		{
 			if (bad_selection)
@@ -624,7 +619,8 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 
 		// once we're past that loop, the file_selection value represents a file or directory to open...
 		// reading through the C++ documentation, I didn't find a way to directly access a member of the directory
-		// using the std::filesystem functions..., guess we'll just iterate through until we get to the right one
+		// using the std::filesystem functions-> guess we'll just iterate through until we get to the right one
+			// there has to be a better way to do this, right?
 		entry_index = 0;
 		temp_path = curr_dir;
 		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) // starts in cwd
@@ -646,7 +642,7 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 			{
 				if (entry_index == file_selection)
 				{
-					user_plays(dir_entry.path()); // necessary user_plays function call->TO BE IMPLEMENTED
+					user_plays(dir_entry.path());
 					break;
 				}
 				else
@@ -680,19 +676,22 @@ void play_menu()
 	if (!verify_adj_info_path(&adj_path, true)) // make sure the adjacency info directory is there
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Issues with/ couldn't find the \"Adjacency_Information\" directory.\nRequested path: %s", adj_path.string().c_str());
+			"Issues with/ couldn't find the \"Adjacency_Information\" directory.\nReturned path: %s", adj_path.string().c_str());
 	}
 
 	play_menu_subdir(adj_path); // and if so then start browsing
 }
 
-// Need to be able to walk through a variable number of graph parameters...think it's safe to assume they're all uint_fast16_t's, can make a change later if it's needed
+// Make similar function for results file naming?
 /****************************************************************************
 * get_adj_info_file_name
 *
 * - Takes in a graph family and its associated graph parameters and returns a 
 * std::string of the name for the graph's adjacency information file
 * - Name is of the form "<Graph Family Name> (param1, param2, ...).txt"
+* - Need to be able to walk through a variable number of graph parameters...
+* think it's safe to assume they're all uint_fast16_t's, can make a change 
+* later if it's needed
 *
 * Parameters :
 * - graph_fam : Which graph family the name is being made for
@@ -713,8 +712,8 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 		return "";
 	}
 
-	#pragma warning(suppress:6385) // makes warning go away in compilation but not IntelliSense
-	std::string file_name = avail_graphs[graph_fam].graph_file_name; // bad warning sometimes pops up here
+	#pragma warning(suppress:6385) 
+	std::string file_name = avail_graphs[graph_fam].graph_file_name; // false positive warning pops up here
 	if (num_args == 0) // no graph parameters
 	{
 		file_name.append(".txt");
@@ -749,11 +748,9 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 // These functions will attempt to open the file to write to, take in any necessary parameters from the user, 
 // call the actual generating function, and then close the file after it has finished its work 
 // these will also perform any necessary parameter checks 
-// Organizationally these functions are in this file (instead of Adjacency_Matrix.h) because they're more of a direct result in
+// Organizationally these functions are in this file (instead of Adjacency_Matrix.h) because they're more of a direct result of
 // how I'm implementing the menu than how the graphs are generated
 
-// TODO:
-// Need to go through file name creation bits of code so that these save in the correct folders in whatever adjacency directory is specified
 // If a subfolder of the correct name doesn't exist, just stick it in the directory-> leave it up to the user where they want their files
 // If a subfolder of the correct name does exist, put it in there->organization done for those who don't care
 	// do we want to add option to play immediately on a file we just generated?->talk with Gates/ Kelvey
@@ -774,7 +771,7 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 ****************************************************************************/
 void user_generalized_petersen_gen()
 {
-	// Generalized Petersen graphs need 'n' and 'k' parameters to be contructed
+	// Generalized Petersen graphs need 'n' and 'k' parameters to be constructed
 	uint_fast16_t n_param = 0; // providing initial assignment to get uninitialized local variable warning to go away
 	uint_fast16_t k_param = 0; // ^
 	std::string n_raw, k_raw;
@@ -826,28 +823,27 @@ void user_generalized_petersen_gen()
 
 	// can check if file exists here if we want to do some kind of versioning....
 
-#ifdef WIN32 // non-Windows way to set errno?
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else 
-	int err = 0;
 	output = fopen(output_path.string().c_str(), "w");
-#endif // WIN32
+#endif // _WIN32
 
-#ifdef WIN32
-	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
+#ifdef _WIN32
+	if (err != 0)
 	{
-
-		char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
-		strerror_s(err_buff, 94, NULL);
+		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
+		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
+			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", 
+			output_path.string().c_str(), err_buff);
 #else
 	if (output == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str(), err);
-#endif // WIN32
+			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
+#endif // _WIN32
 		return;
 	}
 
@@ -858,7 +854,8 @@ void user_generalized_petersen_gen()
 		if (close_err != 0)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Failed to properly close the output file.\nPath associated with file stream: %s", output_path.string().c_str());
+				"Failed to properly close the output file.\nPath associated with file stream: %s", 
+				output_path.string().c_str());
 			return;
 		}
 	}
@@ -933,27 +930,26 @@ void user_stacked_prism_gen()
 	std::string file_name = get_adj_info_file_name(STACKED_PRISM_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 
-#ifdef WIN32 // non-Windows way to set errno?
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else
-	int err = 0;
 	output = fopen(output_path.string().c_str(), "w");
-#endif // WIN32
+#endif // _WIN32
 	
-#ifdef WIN32
+#ifdef _WIN32
 	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
 	{
-		char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
-		strerror_s(err_buff, 94, NULL);
+		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
+		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", file_name.c_str(), err_buff);
+			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
 	if(output == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", file_name.c_str(), err);
-#endif // WIN32
+			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str());
+#endif // _WIN32
 		return;
 	}
 
@@ -965,7 +961,8 @@ void user_stacked_prism_gen()
 		if (close_err != 0)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Failed to properly close the output file.\nPath associated with file stream: %s", file_name.c_str());
+				"Failed to properly close the output file.\nPath associated with file stream: %s", 
+				output_path.string().c_str());
 			return;
 		}
 	}
@@ -1023,7 +1020,7 @@ void user_z_mn_gen()
 			continue;
 		}
 		n_param = std::stoul(n_raw, NULL);
-	} while (!(m_param >= 3) // are they really this constrained?
+	} while (!(m_param >= 2) // is this the correct constraint?
 		|| !(n_param >= 1));
 
 	printf("Generating graph...");
@@ -1041,27 +1038,27 @@ void user_z_mn_gen()
 	output_path.append(file_name);
 	
 
-#ifdef WIN32 // non-Windows way to set errno?
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else
-	int err = 0;
 	output = fopen(output_path.string().c_str(), "w");
-#endif // WIN32
+#endif // _WIN32
 
-#ifdef WIN32
-	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
+#ifdef _WIN32
+	if (err != 0) 
 	{
-		char err_buff[94]; // Your string message can be, at most, 94 characters long. (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
-		strerror_s(err_buff, 94, NULL);
+		//strerrorlen_s(err); // looks like this isn't defined on my machine :(
+		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
+		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", file_name.c_str(), err_buff);
+			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
 	if(output == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", file_name.c_str(), err);
-#endif // WIN32
+			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
+#endif // _WIN32
 		return;
 	}
 
@@ -1073,7 +1070,8 @@ void user_z_mn_gen()
 		if (close_err != 0)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Failed to properly close the output file.\nPath associated with file stream: %s", file_name.c_str());
+				"Failed to properly close the output file.\nPath associated with file stream: %s", 
+				output_path.string().c_str());
 			return;
 		}
 	}
@@ -1147,17 +1145,18 @@ void generate_menu()
 * Returns :
 * - none
 ****************************************************************************/
+// struct array for menu options here as well?
 void main_menu()
 {
 	// what do we want to do with the welcome screen?
 	printf("Welcome to the Cycle Games on Graphs Research Tool!\n");
-	printf("This code was written and developed by <How do we wanna do names here?>\n");
+	printf("This code was written and developed by <How do we wanna do names here?>\n"); // thoughts here guys?
 	printf("Press [ENTER] to continue\n");
 
 	char throw_away = std::getchar(); 
 
-	std::string raw_menu_choice;
-	uint_fast16_t menu_choice = 3; // initialize to unacceptable value for weird edge case
+	std::string menu_choice_raw;
+	uint_fast16_t menu_choice = 3; // initialize to unacceptable value
 	while (true)
 	{
 		menu_choice = 3; // have to reset this value for new pass
@@ -1169,14 +1168,14 @@ void main_menu()
 			printf("[1] Generate an Adjacency Listing\n");
 			printf("[2] EXIT\n");
 
-			std::cin >> raw_menu_choice;
+			std::cin >> menu_choice_raw;
 			std::cin.clear();
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			if (!is_number(raw_menu_choice))
+			if (!is_number(menu_choice_raw))
 			{
 				continue; 
 			}
-			menu_choice = std::stoul(raw_menu_choice, NULL);
+			menu_choice = std::stoul(menu_choice_raw, NULL);
 			if (menu_choice == 2)
 			{
 				return;

@@ -94,6 +94,7 @@ void display_error(const char* file_name, int line_num, const char* func_sig, bo
 * Returns :
 * - none
 ****************************************************************************/
+// combine with erase_lines function, allow some special argument to specify erasing all lines
 void inline clear_screen()
 {
 #if defined(_WIN32) || defined(_WIN64)
@@ -103,7 +104,7 @@ void inline clear_screen()
 #else
 	display_error(__FILE__, __LINE__, __FUNCSIG__, false, 
 		"Failed to clear the screen. Unable to identify operating system in use.");
-#endif // WIN32
+#endif // _WIN32 OR _WIN64
 }
 
 /****************************************************************************
@@ -201,6 +202,7 @@ inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_
 * as far as I can tell
 *	- maybe it's reading in the size from the OS's inode, which might include
 *	reserved space as in addition to the space actually used by the file
+*	- could bench mark to see if there's a speed difference between the two
 *
 * Parameters :
 * - file : pointer to the fstream in question
@@ -242,5 +244,3 @@ inline size_t num_digits(uint_fast16_t input)
 {
 	return input == 0 ? 1 : (size_t)std::log10(input) + 1;
 }
-
-
