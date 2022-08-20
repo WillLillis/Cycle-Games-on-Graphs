@@ -97,10 +97,19 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
 		return NULL;
 	}
+
 	size_t curr = data_start;
-	// Get rid of this assert
-	// Check why we're getting an error
-	assert(curr < file_length); // assert necessary to make VS warning go away
+	
+	if(!(curr < file_length))
+	{
+		if (data != NULL)
+		{
+			free(data);
+		}
+		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
+		return NULL;
+	}
 	while (curr < file_length)
 	{
 		if (std::isdigit(data[curr]))

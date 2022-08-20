@@ -860,9 +860,28 @@ void user_generalized_petersen_gen()
 		}
 	}
 
-	printf("Generation completed.\n"); 
-	printf("Press [ENTER] to continue\n");
-	char throw_away = std::getchar();
+	// add option to play the game here
+	std::string exit_choice_raw;
+	uint_fast16_t exit_choice = 2;
+	do
+	{
+		printf("Generation completed.\n");
+		printf("[0] Continue\n");
+		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		std::cin >> exit_choice_raw;
+		std::cin.clear();
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		if (!is_number(exit_choice_raw))
+		{
+			continue;
+		}
+		exit_choice = std::stoul(exit_choice_raw, NULL);
+	} while (!(exit_choice >= 0 && exit_choice <= 1));
+
+	if (exit_choice == 1)
+	{
+		user_plays(output_path);
+	}
 }
 
 /****************************************************************************
