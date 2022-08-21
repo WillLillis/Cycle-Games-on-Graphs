@@ -1,5 +1,5 @@
 #pragma once
-
+// test this all day Sunday, try and at least get it to a reasonably working state
 #include "Cycle_Games.h"
 
 // going to start drafting the multithreaded version here
@@ -33,15 +33,15 @@
 */
 
 // Might redo this later in a more modern C++ style, but wanted to try this out for now
+	// although it makes sense to immediately use std::atomic_bool (just std::atomic<bool>) instead of a volatile bool, as perf should be a little better optimized
 
-// C++ structs need initializers...you learn something new everyday
 typedef struct THREAD_GAME_INFO {
 	std::thread thread{};
 	uint_fast16_t* edge_use_matrix = NULL;
 	uint_fast16_t* node_use_list = NULL;
-	GAME_STATE* return_val = NULL;
-	bool* kill_flag = NULL;
-	volatile bool avail_for_use = true;
+	bool return_val = NULL;
+	std::atomic_bool* kill_flag = NULL;
+	bool avail_for_use = true;
 }THREAD_GAME_INFO;
 
 bool thread_game_info_init(THREAD_GAME_INFO* new_struct, uint_fast16_t num_nodes, uint_fast16_t starting_node)
@@ -53,13 +53,10 @@ bool thread_game_info_init(THREAD_GAME_INFO* new_struct, uint_fast16_t num_nodes
 
 	new_struct->edge_use_matrix = (uint_fast16_t*)calloc(num_nodes * num_nodes, sizeof(uint_fast16_t));
 	new_struct->node_use_list = (uint_fast16_t*)calloc(num_nodes, sizeof(uint_fast16_t));
-	new_struct->return_val = (GAME_STATE*)malloc(sizeof(GAME_STATE));
-	new_struct->kill_flag = (bool*)malloc(sizeof(bool));
-	//new_struct->avail_for_use = true; // taken care of with the struct's initializer
+	new_struct->kill_flag = (std::atomic_bool*)malloc(sizeof(std::atomic_bool));
 
 	if (new_struct->edge_use_matrix == NULL
 		|| new_struct->node_use_list == NULL
-		|| new_struct->return_val == NULL
 		|| new_struct->kill_flag == NULL)
 	{
 		if (new_struct->edge_use_matrix != NULL)
@@ -70,10 +67,6 @@ bool thread_game_info_init(THREAD_GAME_INFO* new_struct, uint_fast16_t num_nodes
 		{
 			free(new_struct->node_use_list);
 		}
-		if (new_struct->return_val != NULL)
-		{
-			free(new_struct->return_val);
-		}
 		if (new_struct->kill_flag != NULL)
 		{
 			free(new_struct->kill_flag);
@@ -81,11 +74,12 @@ bool thread_game_info_init(THREAD_GAME_INFO* new_struct, uint_fast16_t num_nodes
 
 		return false;
 	}
-
-	*(new_struct->kill_flag) = false;
-	*(new_struct->return_val) = ERROR_STATE; // default to error state until the thread is done executing, as accessing the data early would indicate an error of some sort
+	
+	new_struct->return_val = ERROR_STATE; // default to error state until the thread is done executing, as accessing the data early would indicate an error of some sort
 	new_struct->node_use_list[starting_node] = USED;
+	*(new_struct->kill_flag) = false;
 	new_struct->avail_for_use = true;
+
 	return true;
 }
 
@@ -103,10 +97,6 @@ void thread_game_info_free(THREAD_GAME_INFO* old_struct)
 	if (old_struct->node_use_list != NULL)
 	{
 		free(old_struct->node_use_list);
-	}
-	if (old_struct->return_val != NULL)
-	{
-		free(old_struct->return_val);
 	}
 	if (old_struct->kill_flag != NULL)
 	{
@@ -138,7 +128,8 @@ bool thread_game_info_reset(THREAD_GAME_INFO* old_struct, uint_fast16_t num_node
 	old_struct->node_use_list[starting_node] = USED;
 	*/
 
-	*(old_struct->return_val) = ERROR_STATE;
+	
+	old_struct->return_val = ERROR_STATE;
 	*(old_struct->kill_flag) = false;
 	old_struct->avail_for_use = true;
 	return true;
@@ -205,7 +196,7 @@ uint_fast16_t next_avail_thread(THREAD_GAME_INFO* thread_list, uint_fast16_t num
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
 GAME_STATE MAC_threaded_rucur(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const uint_fast16_t* adj_matrix,
-	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, const volatile bool* kill_flag)
+	uint_fast16_t* edge_use_matrix, uint_fast16_t* node_use_list, const std::atomic_bool* kill_flag)
 {
 	if (adj_matrix == NULL || edge_use_matrix == NULL 
 		|| node_use_list == NULL || kill_flag == NULL)
@@ -297,7 +288,7 @@ void MAC_threaded_dispatch(const uint_fast16_t curr_node, const uint_fast16_t nu
 	THREAD_GAME_INFO* thread_materials)
 {
 	// simply call the recursive game playing code and store the result where the caller can see it
-	*(thread_materials->return_val) = MAC_threaded_rucur(curr_node, num_nodes, adj_matrix, 
+	thread_materials->return_val = MAC_threaded_rucur(curr_node, num_nodes, adj_matrix, 
 		thread_materials->edge_use_matrix, thread_materials->node_use_list, thread_materials->kill_flag);
 }
 
@@ -332,7 +323,8 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 		return ERROR_STATE;
 	}
 
-	const uint_fast16_t num_threads = std::thread::hardware_concurrency(); // might want to tweak this...-> we'll run some benchmarks with different values once we get the basics working
+	// might want to tweak the num_threads value...-> we'll run some benchmarks with different values once we get the basics working
+	const uint_fast16_t num_threads = std::max((std::thread::hardware_concurrency() / 2), (unsigned int)1); // in case std::thread::hardware_concurrency() returns 1, we won't try to run this with 0 threads...
 	THREAD_GAME_INFO* avail_threads = (THREAD_GAME_INFO*)malloc(num_threads * sizeof(THREAD_GAME_INFO));
 
 	if (avail_threads == NULL)
@@ -380,7 +372,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 			avail_threads[curr_thread].edge_use_matrix[index_translation(num_nodes, starting_node, curr_neighbor)] = USED;
 			avail_threads[curr_thread].edge_use_matrix[index_translation(num_nodes, curr_neighbor, starting_node)] = USED;
 			avail_threads[curr_thread].node_use_list[curr_neighbor] = USED; 
-			*(avail_threads[curr_thread].return_val) = RUN_STATE;
+			avail_threads[curr_thread].return_val = RUN_STATE;
 			avail_threads[curr_thread].thread = std::thread(MAC_threaded_dispatch, curr_neighbor, num_nodes, adj_matrix, &avail_threads[curr_thread]);
 		}
 
@@ -389,11 +381,11 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 		{
 			if (avail_threads[i].avail_for_use == false) // if the thread is currently running...
 			{
-				if (*(avail_threads[i].return_val) == RUN_STATE) // if it's still running, let it be
+				if (avail_threads[i].return_val == RUN_STATE) // if it's still running, let it be
 				{
 					continue;
 				}
-				else if (*(avail_threads[i].return_val) == ERROR_STATE) // if there was an error, it's time to end everything
+				else if (avail_threads[i].return_val == ERROR_STATE) // if there was an error, it's time to end everything
 				{
 					// error handling code
 					if (avail_threads[i].thread.joinable())
@@ -404,7 +396,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 					search_continue = false;
 					break;
 				}
-				else if (*(avail_threads[i].return_val) == WIN_STATE) // we don't care, clean the thread up and set it as ready for the next dispatch
+				else if (avail_threads[i].return_val == WIN_STATE) // we don't care, clean the thread up and set it as ready for the next dispatch
 				{
 					if (avail_threads[i].thread.joinable())
 					{
@@ -418,7 +410,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 					}
 					continue;
 				}
-				else if (*(avail_threads[i].return_val) == LOSS_STATE) // a winning move, also time to end everything
+				else if (avail_threads[i].return_val == LOSS_STATE) // a winning move, also time to end everything
 				{
 					if (avail_threads[i].thread.joinable())
 					{
@@ -455,11 +447,11 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 				if (avail_threads[i].avail_for_use == false) // if the thread is currently running...
 				{
 					threads_left++;
-					if (*(avail_threads[i].return_val) == RUN_STATE) // if it's still running, let it be
+					if (avail_threads[i].return_val == RUN_STATE) // if it's still running, let it be
 					{
 						continue;
 					}
-					else if (*(avail_threads[i].return_val) == ERROR_STATE) // if there was an error, it's time to end everything
+					else if (avail_threads[i].return_val == ERROR_STATE) // if there was an error, it's time to end everything
 					{
 						if (avail_threads[i].thread.joinable())
 						{
@@ -469,7 +461,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 						search_continue = false;
 						break;
 					}
-					else if (*(avail_threads[i].return_val) == WIN_STATE) // we don't care, reset the struct (can't free it since we're still checking its value on the next pass)
+					else if (avail_threads[i].return_val == WIN_STATE) // we don't care, reset the struct (can't free it since we're still checking its value on the next pass)
 					{	
 						if (avail_threads[i].thread.joinable())
 						{
@@ -483,7 +475,7 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t starting_node, const uint_fast1
 						}
 						continue;
 					}
-					else if (*(avail_threads[i].return_val) == LOSS_STATE) // a winning move!!!!
+					else if (avail_threads[i].return_val == LOSS_STATE) // a winning move!!!!
 					{
 						if (avail_threads[i].thread.joinable())
 						{
