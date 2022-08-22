@@ -18,6 +18,17 @@
 #include <stdexcept>
 #include "Misc.h"
 
+/*
+*
+* Because using '\n' as a delimiter breaks compatability for files shared between Windowsand Mac machines,
+* we'll #define the following delimiter character below. The choice is almost entirely arbitrary, it just 
+*	- can't be a number 
+*	- can't be '\n'
+*	- there may be other restrictions that we haven't encountered yet
+*/ 
+#define ADJ_FILE_DELIM	35 // ASCII character code for '#'
+
+
 // Maybe a little overkill, but some defensive programming here to limit how many elements we'll read in
 #define MAX_ELEMENTS	500 // arbitrary max value, feel free to increase if needed
 
@@ -75,6 +86,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	uint_fast16_t temp_label;
 	uint_fast16_t max_label = 0;
 	
+	// BUGBUG will need to tweak here if we use the new delimiter after the adjacency heading ?
 	size_t data_start = 0;
 	while (data_start < file_length && data[data_start] != '\n') // skip over the labels in the first line
 	{
@@ -134,7 +146,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	catch (const std::exception& err)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
-			"Unexpected exception caught: % s", err.what());
+			"Unexpected exception caught: %s", err.what());
 		if (adj_matrix != NULL)
 		{
 			delete adj_matrix;
@@ -245,20 +257,20 @@ void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 	// outer ring connections to adjacent nodes around the ring
 	for (uint_fast16_t i = 0; i < n; i++)
 	{
-		fprintf(output, "%hhu,%hhu\n", (uint16_t)i, (uint16_t)((i + 1) % n));
+		fprintf(output, "%hu,%hu%c", (uint16_t)i, (uint16_t)((i + 1) % n), ADJ_FILE_DELIM);
 	}
 	// outer ring to inner ring "spokes"
 	for (uint_fast16_t i = 0; i < n; i++)
 	{
-		fprintf(output, "%hhu,%hhu\n", (uint16_t)i, (uint16_t)(i + n));
+		fprintf(output, "%hu,%hu%c", (uint16_t)i, (uint16_t)(i + n), ADJ_FILE_DELIM);
 	}
 	// inner ring connections (ew)
 	for (uint_fast16_t i = n; i < (2 * n) - 1; i++)
 	{
-		fprintf(output, "%hhu,%hhu\n", i, (uint16_t)(((i + k) % n) + n));
+		fprintf(output, "%hu,%hu%c", i, (uint16_t)(((i + k) % n) + n), ADJ_FILE_DELIM);
 	}
 	// also an inner ring connection
-	fprintf(output, "%hhu,%hhu", (uint16_t)((2 * n) - 1), (uint16_t)(((((2 * n) - 1) + k) % n) + n)); // last entry does NOT get a newline char after it
+	fprintf(output, "%hu,%hu", (uint16_t)((2 * n) - 1), (uint16_t)(((((2 * n) - 1) + k) % n) + n)); // last entry does NOT get a newline char after it
 
 }
 
@@ -293,18 +305,18 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 	{
 		for (uint_fast16_t j = 0; j < m - 1; j++)
 		{
-			fprintf(output, "%hhu,%hhu\n", (uint16_t)(j + (i * m)), (uint16_t)(j + 1 + (i * m)));
+			fprintf(output, "%hu,%hu%c", (uint16_t)(j + (i * m)), (uint16_t)(j + 1 + (i * m)), ADJ_FILE_DELIM);
 		}
-		fprintf(output, "%hhu,%hhu", (uint16_t)(m - 1 + (i * m)), (uint16_t)(i * m));
+		fprintf(output, "%hu,%hu", (uint16_t)(m - 1 + (i * m)), (uint16_t)(i * m));
 		if (i != (n - 1)) // doing this to avoid placing a newline char at the end of the file
 		{
-			fprintf(output, "\n");
+			fprintf(output, "%c", ADJ_FILE_DELIM);
 		}
 		if (i < n - 1)
 		{
 			for (uint_fast16_t k = 0; k < m; k++)
 			{
-				fprintf(output, "%hhu,%hhu\n", (uint16_t)(k + (i * m)), (uint16_t)(k + ((i + 1) * m)));
+				fprintf(output, "%hu,%hu%c", (uint16_t)(k + (i * m)), (uint16_t)(k + ((i + 1) * m)), ADJ_FILE_DELIM);
 			}
 		}
 	}
@@ -496,11 +508,11 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 			{
 				if (has_entry == true) // doing this to avoid a newline character at the end of the file
 				{
-					fprintf(output, "\n%hhu,%hhu", (uint16_t)i, (uint16_t)j);
+					fprintf(output, "%c%hu,%hu", ADJ_FILE_DELIM, (uint16_t)i, (uint16_t)j);
 				}
 				else
 				{
-					fprintf(output, "%hhu,%hhu", (uint16_t)i, (uint16_t)j);
+					fprintf(output, "%hu,%hu", (uint16_t)i, (uint16_t)j);
 
 				}
 				
