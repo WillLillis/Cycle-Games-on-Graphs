@@ -95,7 +95,7 @@ void display_error(const char* file_name, int line_num, const char* func_sig, bo
 * - none
 ****************************************************************************/
 // combine with erase_lines function, allow some special argument to specify erasing all lines
-void inline clear_screen()
+inline void clear_screen()
 {
 #if defined(_WIN32) || defined(_WIN64)
 	system("cls");

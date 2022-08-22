@@ -43,7 +43,7 @@ typedef uint_fast16_t Adjacency_Info;
 * (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
 // Need to add ability to read in adjacency matrices
-uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out)
+std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out)
 {
 	std::fstream data_stream;
 
@@ -63,15 +63,9 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 			"Received an invalid file length.\nRequested path: %s", file_path.string().c_str());
 		return NULL;
 	}
-	char* data = (char*)malloc(file_length);
-	if (data == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"file_length\" variable", file_length);
-		return NULL;
-	}
 
-	data_stream.read(data, file_length); // read the file's contents into the data buffer
+	std::vector<char> data(file_length);
+	data_stream.read(&data[0], file_length);
 	data_stream.close();
 
 	// Need to find the largest node number in the data so that we can allocate the buffer for the adjacency matrix
@@ -89,10 +83,6 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	}
 	else // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
 	{
-		if (data != NULL)
-		{
-			free(data);
-		}
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
 		return NULL;
@@ -102,10 +92,6 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	
 	if(!(curr < file_length))
 	{
-		if (data != NULL)
-		{
-			free(data);
-		}
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
 		return NULL;
@@ -114,7 +100,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	{
 		if (std::isdigit(data[curr]))
 		{
-			temp_label = std::atoi(data + curr);
+			//temp_label = std::atoi(data + curr);
+			temp_label = std::atoi(&data[curr]);
 			max_label = std::max(temp_label, max_label);
 			curr += num_digits(temp_label) + 1; // advance to the next character, and then one more to skip a comma/ newline character
 			continue; // back to the top of the loop
@@ -123,7 +110,6 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Error parsing the file searching for the largest node label.");
-			free(data);
 			return NULL;
 		}
 	}
@@ -131,16 +117,15 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 	max_label++; // have to account for 0 based counting with the node labels
 	*num_nodes_out = max_label;
 	// now that we have the max label, we can allocate an array for the adjacency matrix
-	uint_fast16_t* adj_matrix = (uint_fast16_t*)calloc(sizeof(uint_fast16_t), (size_t)max_label * (size_t)max_label);
-	if (adj_matrix == NULL)
+	std::vector<uint_fast16_t>* adj_matrix; // supposed to have this inside and move the catch block all the way down?
+	try
+	{
+		adj_matrix = new std::vector<uint_fast16_t>((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
+	}
+	catch (const std::bad_alloc& err)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"adj_matrix\" variable", 
-			sizeof(uint_fast16_t) * (size_t)max_label * (size_t)max_label);
-		if (data != NULL)
-		{
-			free(data);
-		}
+			"Memory allocation failure caught: %s", err.what());
 		return NULL;
 	}
 
@@ -153,14 +138,7 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 			file_path.string().c_str());
-		if (data != NULL)
-		{
-			free(data);
-		}
-		if (adj_matrix != NULL)
-		{
-			free(adj_matrix);
-		}
+		delete adj_matrix;
 		return NULL;
 	}
 	while (curr < file_length)
@@ -169,7 +147,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 		{
 			if (!second_node) // reading in the first digit in a pair
 			{
-				node_1 = std::atoi(data + curr);
+				//node_1 = std::atoi(data + curr);
+				node_1 = std::atoi(&data[curr]);
 				curr += num_digits(node_1); // advance to the first char past that of the number's
 				// we shouldn't be at the end of the file, AND the next character has to be a comma
 				if (!(curr < file_length && data[curr] == ','))
@@ -177,14 +156,7 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 					display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 						"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 						file_path.string().c_str());
-					if (data != NULL)
-					{
-						free(data);
-					}
-					if (adj_matrix != NULL)
-					{
-						free(adj_matrix);
-					}
+					delete adj_matrix;
 					return NULL;
 				}
 				curr++; // advance one more character to skip the comma separating the two digits
@@ -193,7 +165,8 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 			}
 			else // reading in the second digit
 			{
-				node_2 = std::atoi(data + curr);
+				//node_2 = std::atoi(data + curr);
+				node_2 = std::atoi(&data[curr]);
 				curr += num_digits(node_2); // advance to the first char past that of the number's
 				if (curr < file_length) // if we're not at the end of the file...
 				{
@@ -202,20 +175,13 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 						display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 							"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 							file_path.string().c_str());
-						if (data != NULL)
-						{
-							free(data);
-						}
-						if (adj_matrix != NULL)
-						{
-							free(adj_matrix);
-						}
+						delete adj_matrix;
 						return NULL;
 					}
 				}
 				curr++; // advance one more character to skip the newline char
-				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT;
-				adj_matrix[index_translation(max_label, node_2, node_1)] = ADJACENT;
+				(*adj_matrix)[index_translation(max_label, node_1, node_2)] = ADJACENT;
+				(*adj_matrix)[index_translation(max_label, node_2, node_1)] = ADJACENT;
 				second_node = false;
 				continue;
 			}
@@ -225,22 +191,11 @@ uint_fast16_t* load_adjacency_info(std::filesystem::path file_path, uint_fast16_
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 				file_path.string().c_str());
-			if (data != NULL)
-			{
-				free(data);
-			}
-			if (adj_matrix != NULL)
-			{
-				free(adj_matrix);
-			}
+			delete adj_matrix;
 			return NULL;
 		}
 	}
 
-	if (data != NULL)
-	{
-		free(data);
-	}
 	return adj_matrix;
 }
 
@@ -404,22 +359,16 @@ inline uint_fast16_t tuple_to_index(uint_fast16_t n, uint_fast16_t tuple_num, ui
 * - uint_fast16_t : the distance between tuple_1 and tuple_2
 ****************************************************************************/
 // Different/ better way to indicate error on return?-> make it a int_fast32_t, return -1 or something?
-uint_fast16_t tuple_diff(uint_fast16_t* tuple_1, uint_fast16_t* tuple_2, uint_fast16_t num_entries)
+//uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_1, const std::vector<uint_fast16_t>& tuple_2, const uint_fast16_t num_entries)
+uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder, size_t start_index_1, size_t start_index_2, const uint_fast16_t num_entries)
 {
-	if (tuple_1 == NULL || tuple_2 == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Invalid memory address(es) supplied. Distance calculations will be invalid");
-		return 0;
-	}
-
 	uint_fast16_t diff = 0;
 
 	for (uint_fast16_t entry = 0; entry < num_entries; entry++)
 	{
 		// cast to regular int16_t necessary, otherwise VS complains about 
 		// "more than one instance of overloaded function matches the argument list
-		diff += std::abs((int16_t)((int16_t)tuple_1[entry] - (int16_t)tuple_2[entry]));
+		diff += std::abs((int16_t)((int16_t)tuple_holder[start_index_1 + entry] - (int16_t)tuple_holder[start_index_2 + entry]));
 	}
 	return diff;
 }
@@ -454,16 +403,9 @@ uint_fast16_t tuple_diff(uint_fast16_t* tuple_1, uint_fast16_t* tuple_2, uint_fa
 * Returns :
 * - none
 ****************************************************************************/
-void z_mn_group_gen(uint_fast16_t* member_list, uint_fast16_t* value_holder,
+void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fast16_t>& value_holder,
 	uint_fast16_t place_in_tuple, uint_fast16_t* place_in_member_list, uint_fast16_t m, uint_fast16_t n)
 {
-	if (member_list == NULL || value_holder == NULL || place_in_member_list == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Invalid memory address(es) supplied. Group generation results will be invalid.");
-		return;
-	}
-
 	if (place_in_tuple < n - 1)
 	{
 		for (uint_fast16_t i = 0; i < m; i++)
@@ -515,40 +457,12 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 	}
 
 	uint_fast16_t num_tuples = (uint16_t)std::pow(m, n);
-	uint_fast16_t* value_holder = (uint_fast16_t*)malloc(n * sizeof(uint_fast16_t));;
-	uint_fast16_t* member_list = (uint_fast16_t*)malloc((size_t)(num_tuples * n) * sizeof(uint_fast16_t));
-	uint_fast16_t* place_in_member_list = (uint_fast16_t*)calloc(1, sizeof(uint_fast16_t)); // would just make this a stack variable and pass its address in, but was getting heap corruption warnings
+	std::vector<uint_fast16_t> value_holder(n);
+	std::vector<uint_fast16_t> member_list(num_tuples * n);
+	uint_fast16_t place_in_member_list = 0;
 	bool has_entry = false;
-
-	if (value_holder == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"value_holder\" variable", n * sizeof(uint_fast16_t));
-		return;
-	}
-	if (member_list == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"member_list\" variable", (size_t)(num_tuples * n) * sizeof(uint_fast16_t));
-		return;
-	}
-	if (place_in_member_list == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"place_in_member_list\" variable", sizeof(uint_fast16_t));
-		return;
-	}
 	
-	z_mn_group_gen(member_list, value_holder, 0, place_in_member_list, m, n);
-
-	if (value_holder != NULL)
-	{
-		free(value_holder);
-	}
-	if (place_in_member_list != NULL)
-	{
-		free(place_in_member_list);
-	}
+	z_mn_group_gen(member_list, value_holder, 0, &place_in_member_list, m, n);
 	
 	// output to file
 	fprintf(output, "Adjacency_Listing\n");
@@ -568,7 +482,8 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 			* The specific warning was "expression mixes element counts and byte quantities"
 			* 
 			*/
-			if (tuple_diff(member_list + (i * n), member_list + (j * n), n) == 1) 
+			//if (tuple_diff(member_list + (i * n), member_list + (j * n), n) == 1)
+			if(tuple_diff(member_list, i * n, j * n, n) == 1)
 			{
 				if (has_entry == true) // doing this to avoid a newline character at the end of the file
 				{
@@ -583,10 +498,5 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 				has_entry = true;
 			}
 		}
-	}
-	
-	if (member_list != NULL)
-	{
-		free(member_list);
 	}
 }

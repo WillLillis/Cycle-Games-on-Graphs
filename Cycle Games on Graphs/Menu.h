@@ -5,6 +5,7 @@
 #include <filesystem> // Property Pages->Configuration Properties->General->C++ Language Standard->ISO C++ 17 Standard (/std:c++17) (OR NEWER)
 #include "Adjacency_Matrix.h"
 #include "Cycle_Games.h"
+#include "Cycle_Games_Threaded.h"
 #include "Misc.h"
 
 /*
@@ -59,6 +60,7 @@ typedef struct GRAPH_GEN_INFO {
 	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
 }GRAPH_GEN_INFO;
 
+// Generalize to a menu entry struct-> all functions must be void with no args, should be fine
 GRAPH_GEN_INFO avail_graphs[] = {
 	GRAPH_GEN_INFO{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
 	GRAPH_GEN_INFO{"Stacked Prism", "Stacked_Prism", user_stacked_prism_gen},
@@ -276,7 +278,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	}
 
 	uint_fast16_t num_nodes = 0; 
-	uint_fast16_t* adj_info = load_adjacency_info(adj_info_path, &num_nodes); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
+	std::vector<uint_fast16_t>* adj_info = load_adjacency_info(adj_info_path, &num_nodes); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
 	if (adj_info == NULL)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
@@ -285,6 +287,10 @@ void user_plays(std::filesystem::path adj_info_path)
 	}
 	if (!(num_nodes > 0))
 	{
+		if (adj_info != NULL)
+		{
+			delete adj_info;
+		}
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hhu", (uint16_t)num_nodes);
 		return;
@@ -391,29 +397,8 @@ void user_plays(std::filesystem::path adj_info_path)
 	} while (!(node_select >= 0 && node_select < num_nodes));
 
 	// Now that all of the options have been specified, it's time to set up to actually play the game as requested
-
-	uint_fast16_t* edge_use = (uint_fast16_t*)calloc(num_nodes * num_nodes, sizeof(uint_fast16_t));
-	uint_fast16_t* node_use = (uint_fast16_t*)calloc(num_nodes, sizeof(uint_fast16_t));
-	if (edge_use == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"edge_use\" variable", num_nodes * num_nodes * sizeof(uint_fast16_t));
-		if (node_use != NULL)
-		{
-			free(node_use);
-		}
-		return;
-	}
-	if (node_use == NULL)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation error! Requested %zu bytes for the \"node_use\" variable", num_nodes * sizeof(uint_fast16_t));
-		if (edge_use != NULL)
-		{
-			free(edge_use);
-		}
-		return;
-	}
+	std::vector<uint_fast16_t> edge_use(num_nodes * num_nodes, NOT_USED);
+	std::vector<uint_fast16_t> node_use(num_nodes, NOT_USED);
 
 	// Have to mark the starting node as used!
 	node_use[node_select] = USED;
@@ -425,6 +410,7 @@ void user_plays(std::filesystem::path adj_info_path)
 		if (game_select == 0) // MAC
 		{
 			game_result = play_MAC_quiet(node_select, num_nodes, adj_info, edge_use, node_use);
+			//game_result = play_MAC_threaded(node_select, num_nodes, adj_info); // testing this out...let's see how bad it breaks
 		}
 		else // AAC
 		{
@@ -433,21 +419,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	}
 	else // Loud
 	{
-		uint_fast16_t* move_hist = (uint_fast16_t*)malloc(num_nodes * sizeof(uint_fast16_t));
-		if (move_hist == NULL)
-		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Memory allocation error! Requested %zu bytes for the \"move_hist\" variable", num_nodes * sizeof(uint_fast16_t));
-			if (node_use != NULL)
-			{
-				free(node_use);
-			}
-			if (edge_use != NULL)
-			{
-				free(edge_use);
-			}
-			return;
-		}
+		std::vector<uint_fast16_t> move_hist(num_nodes);
 
 		// do we want to shove the file name generation inside a function?
 		FILE* result_stream;
@@ -459,14 +431,14 @@ void user_plays(std::filesystem::path adj_info_path)
 		result_path.append(file_name);
 		// want to add some sort of versioning here so we don't automatically overwrite old files?
 
-#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 		_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 		errno_t err = fopen_s(&result_stream, result_path.string().c_str(), "w"); 
 #else
 		result_stream = fopen(result_path.string().c_str(), "w");
-#endif // _WIN32
+#endif // WIN32
 
-#ifdef _WIN32
+#ifdef WIN32
 		if (err != 0)
 		{
 			char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
@@ -478,19 +450,11 @@ void user_plays(std::filesystem::path adj_info_path)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
-#endif // _WIN32
+#endif // WIN32
 
-			if (node_use != NULL)
+			if (adj_info != NULL)
 			{
-				free(node_use);
-			}
-			if (edge_use != NULL)
-			{
-				free(edge_use);
-			}
-			if (move_hist != NULL)
-			{
-				free(move_hist);
+				delete adj_info;
 			}
 			return;
 		}
@@ -503,10 +467,6 @@ void user_plays(std::filesystem::path adj_info_path)
 			game_result = play_AAC_loud(node_select, num_nodes, adj_info, edge_use, node_use, move_hist, 0, result_stream);
 		}
 
-		if (move_hist != NULL)
-		{
-			free(move_hist);
-		}
 		if (result_stream != NULL) // if result_stream is NULL, then we don't need to close it?
 		{
 			int close_err = fclose(result_stream);
@@ -520,15 +480,7 @@ void user_plays(std::filesystem::path adj_info_path)
 
 	if (adj_info != NULL)
 	{
-		free(adj_info);
-	}
-	if (edge_use != NULL)
-	{
-		free(edge_use);
-	}
-	if (node_use != NULL)
-	{
-		free(node_use);
+		delete adj_info;
 	}
 	
 	printf("\n\nFile: %s, Starting Node: %hhu, Game: %s\n", adj_info_path.filename().string().c_str(), node_select, game_select == 0 ? "MAC" : "AAC");
@@ -703,6 +655,7 @@ void play_menu()
 * - std::string : the generated name for the specified graph's adjacency 
 * information file
 ****************************************************************************/
+// safer way to do va_args than the C way?
 std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_args, ...)
 {
 	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS))
@@ -823,14 +776,14 @@ void user_generalized_petersen_gen()
 
 	// can check if file exists here if we want to do some kind of versioning....
 
-#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else 
 	output = fopen(output_path.string().c_str(), "w");
-#endif // _WIN32
+#endif // WIN32
 
-#ifdef _WIN32
+#ifdef WIN32
 	if (err != 0)
 	{
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
@@ -843,7 +796,7 @@ void user_generalized_petersen_gen()
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
-#endif // _WIN32
+#endif // WIN32
 		return;
 	}
 
@@ -949,14 +902,14 @@ void user_stacked_prism_gen()
 	std::string file_name = get_adj_info_file_name(STACKED_PRISM_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 
-#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else
 	output = fopen(output_path.string().c_str(), "w");
-#endif // _WIN32
+#endif // WIN32
 	
-#ifdef _WIN32
+#ifdef WIN32
 	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
 	{
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
@@ -968,7 +921,7 @@ void user_stacked_prism_gen()
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str());
-#endif // _WIN32
+#endif // WIN32
 		return;
 	}
 
@@ -1076,14 +1029,14 @@ void user_z_mn_gen()
 	output_path.append(file_name);
 	
 
-#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else
 	output = fopen(output_path.string().c_str(), "w");
-#endif // _WIN32
+#endif // WIN32
 
-#ifdef _WIN32
+#ifdef WIN32
 	if (err != 0) 
 	{
 		//strerrorlen_s(err); // looks like this isn't defined on my machine :(
@@ -1096,7 +1049,7 @@ void user_z_mn_gen()
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
-#endif // _WIN32
+#endif // WIN32
 		return;
 	}
 

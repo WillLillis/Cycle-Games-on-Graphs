@@ -1,6 +1,5 @@
 #include "Menu.h"
-#include "Cycle_Games_Threaded.h"
-//#include <chrono> // just for testing stuff
+//#include "Cycle_Games_Threaded.h"
 
 int main()
 {	
@@ -17,8 +16,12 @@ int main()
 // want to look into prototyping the multi-threaded version
 // Code to play Generalized Geography game?
 
-// should the pointer to the adjacency matrix be marked const in the game playing function?
-
 // Need to test Microsoft compiler on non-Windows computer->may have issues with use of #ifdef WIN32/ #ifdef _WIN32-> just need to test things out
 
 // Add build instructions, other things to README
+
+// NEW PLAN!!!!!!!!!!!!!!!!!!!!!!
+	// Need to rethink the multithreaded version of the game playing code
+		// the thread needs to be created the THREAD_GAME_INFO's constructor, 
+			// because std::thread doesn't support copying, and also doesn't allow me to keep a reference of the thread 
+			// the basic idea should be the same, with a bit of the thread management stuff getting swapped out for a vector, with entries getting added on and popped up as the game operates

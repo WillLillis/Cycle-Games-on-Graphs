@@ -46,5 +46,8 @@
 * 
 * Although it looks a bit odd to my eyes (to start at least), it seems like the right choice
 * to use these types, as we may get a bit of a performance boost out of them
+* 
+* However some uses of uint_fastx_t types generate some warnings on some compilers, so casts
+* may be necessary to maintain a quiet-ish compilation
 *
 */
