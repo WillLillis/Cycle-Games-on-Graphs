@@ -300,19 +300,16 @@ void user_plays(std::filesystem::path adj_info_path)
 	}
 
 	uint_fast16_t num_nodes = 0; 
-	std::vector<uint_fast16_t>* adj_info = load_adjacency_info(adj_info_path, &num_nodes); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
-	if (adj_info == NULL)
+	bool load_success = false;
+	std::vector<uint_fast16_t> adj_info = load_adjacency_info(adj_info_path, &num_nodes, &load_success); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
+	if (load_success == false)
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Recieved invalid memory address after attempting to load adjacency information");
+			"An error occurred while attempting to load adjacency information");
 		return;
 	}
 	if (!(num_nodes > 0))
 	{
-		if (adj_info != NULL)
-		{
-			delete adj_info;
-		}
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hhu", (uint16_t)num_nodes);
 		return;
@@ -386,10 +383,6 @@ void user_plays(std::filesystem::path adj_info_path)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to find and/ or create the \"Results\" sub-directory to store the results of the loud run.");
-			if (adj_info != NULL)
-			{
-				delete adj_info;
-			}
 			return;
 		}
 	}
@@ -470,10 +463,6 @@ void user_plays(std::filesystem::path adj_info_path)
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
 #endif // WIN32
-			if (adj_info != NULL)
-			{
-				delete adj_info;
-			}
 			return;
 		}
 		if (game_select == 0) // MAC
@@ -494,11 +483,6 @@ void user_plays(std::filesystem::path adj_info_path)
 					"Failed to properly close the output file.\nPath associated with file stream: %s", result_path.string().c_str());
 			}
 		}
-	}
-
-	if (adj_info != NULL)
-	{
-		delete adj_info;
 	}
 	
 	printf("\n\nFile: %s, Starting Node: %hhu, Game: %s\n", adj_info_path.filename().string().c_str(), node_select, game_select == 0 ? "MAC" : "AAC");

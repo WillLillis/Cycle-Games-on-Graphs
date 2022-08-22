@@ -57,8 +57,10 @@ typedef uint_fast16_t Adjacency_Info;
 * (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
 // Need to add ability to read in adjacency matrices
-std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out)
+std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out, bool* success_out)
 {
+	*success_out = false;
+	std::vector<uint_fast16_t> adj_matrix;
 	std::fstream data_stream;
 
 	data_stream.open(file_path.string().c_str(), std::fstream::in); // open file with read permissions only
@@ -75,7 +77,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Received an invalid file length.\nRequested path: %s", file_path.string().c_str());
-		return NULL;
+		return adj_matrix;
 	}
 
 	std::vector<char> data(file_length);
@@ -100,7 +102,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
-		return NULL;
+		return adj_matrix;
 	}
 
 	size_t curr = data_start;
@@ -109,7 +111,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
-		return NULL;
+		return adj_matrix;
 	}
 	while (curr < file_length)
 	{
@@ -124,7 +126,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Error parsing the file searching for the largest node label.");
-			return NULL;
+			return adj_matrix;
 		}
 	}
 
@@ -132,7 +134,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	*num_nodes_out = max_label;
 
 	// now that we have the max label, we know the size of the adjacency matrix
-	std::vector<uint_fast16_t>* adj_matrix = NULL; 
+	/*std::vector<uint_fast16_t>* adj_matrix = NULL; 
 	try
 	{
 		adj_matrix = new std::vector<uint_fast16_t>((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
@@ -152,7 +154,10 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 			delete adj_matrix;
 		}
 		return NULL;
-	}
+	}*/
+	//std::vector<uint_fast16_t> adj_matrix((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
+	adj_matrix.resize((size_t)max_label * (size_t)max_label);
+	adj_matrix.assign((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
 
 	uint_fast16_t node_1, node_2; // to temporarily store node values read in from the data block
 	bool second_node = false; // to track which node (first or second on a given line) we're on
@@ -163,8 +168,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 			file_path.string().c_str());
-		delete adj_matrix;
-		return NULL;
+		return adj_matrix;
 	}
 	while (curr < file_length)
 	{
@@ -180,8 +184,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 					display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 						"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 						file_path.string().c_str());
-					delete adj_matrix;
-					return NULL;
+					return adj_matrix;
 				}
 				curr++; // advance one more character to skip the comma separating the two digits
 				second_node = true;
@@ -193,18 +196,17 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 				curr += num_digits(node_2); // advance to the first char past that of the number's
 				if (curr < file_length) // if we're not at the end of the file...
 				{
-					if (!(data[curr] == '\n')) // ...there should be a newline character next
+					if (!(data[curr] == ADJ_FILE_DELIM)) // ...there should be a newline character next
 					{
 						display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 							"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 							file_path.string().c_str());
-						delete adj_matrix;
-						return NULL;
+						return adj_matrix;
 					}
 				}
 				curr++; // advance one more character to skip the newline char
-				(*adj_matrix)[index_translation(max_label, node_1, node_2)] = ADJACENT;
-				(*adj_matrix)[index_translation(max_label, node_2, node_1)] = ADJACENT;
+				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT;
+				adj_matrix[index_translation(max_label, node_2, node_1)] = ADJACENT;
 				second_node = false;
 				continue;
 			}
@@ -214,11 +216,11 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
 				file_path.string().c_str());
-			delete adj_matrix;
-			return NULL;
+			return adj_matrix;
 		}
 	}
 
+	*success_out = true;
 	return adj_matrix;
 }
 
