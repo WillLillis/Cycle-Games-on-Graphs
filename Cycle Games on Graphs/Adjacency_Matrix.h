@@ -13,6 +13,9 @@
 #include <cassert>
 #include <filesystem>
 #include <cmath>
+#include <exception>
+#include <typeinfo>
+#include <stdexcept>
 #include "Misc.h"
 
 // Maybe a little overkill, but some defensive programming here to limit how many elements we'll read in
@@ -65,7 +68,7 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	}
 
 	std::vector<char> data(file_length);
-	data_stream.read(&data[0], file_length);
+	data_stream.read(data.data(), file_length);
 	data_stream.close();
 
 	// Need to find the largest node number in the data so that we can allocate the buffer for the adjacency matrix
@@ -100,7 +103,6 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 	{
 		if (std::isdigit(data[curr]))
 		{
-			//temp_label = std::atoi(data + curr);
 			temp_label = std::atoi(&data[curr]);
 			max_label = std::max(temp_label, max_label);
 			curr += num_digits(temp_label) + 1; // advance to the next character, and then one more to skip a comma/ newline character
@@ -116,16 +118,27 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 
 	max_label++; // have to account for 0 based counting with the node labels
 	*num_nodes_out = max_label;
-	// now that we have the max label, we can allocate an array for the adjacency matrix
-	std::vector<uint_fast16_t>* adj_matrix; // supposed to have this inside and move the catch block all the way down?
+
+	// now that we have the max label, we know the size of the adjacency matrix
+	std::vector<uint_fast16_t>* adj_matrix = NULL; 
 	try
 	{
 		adj_matrix = new std::vector<uint_fast16_t>((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
 	}
 	catch (const std::bad_alloc& err)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Memory allocation failure caught: %s", err.what());
+		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
+			"Memory allocation failure caught, the game cannot proceed: %s", err.what());
+		return NULL;
+	}
+	catch (const std::exception& err)
+	{
+		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
+			"Unexpected exception caught: % s", err.what());
+		if (adj_matrix != NULL)
+		{
+			delete adj_matrix;
+		}
 		return NULL;
 	}
 
@@ -147,7 +160,6 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 		{
 			if (!second_node) // reading in the first digit in a pair
 			{
-				//node_1 = std::atoi(data + curr);
 				node_1 = std::atoi(&data[curr]);
 				curr += num_digits(node_1); // advance to the first char past that of the number's
 				// we shouldn't be at the end of the file, AND the next character has to be a comma
@@ -165,7 +177,6 @@ std::vector<uint_fast16_t>* load_adjacency_info(std::filesystem::path file_path,
 			}
 			else // reading in the second digit
 			{
-				//node_2 = std::atoi(data + curr);
 				node_2 = std::atoi(&data[curr]);
 				curr += num_digits(node_2); // advance to the first char past that of the number's
 				if (curr < file_length) // if we're not at the end of the file...
@@ -358,8 +369,6 @@ inline uint_fast16_t tuple_to_index(uint_fast16_t n, uint_fast16_t tuple_num, ui
 * Returns :
 * - uint_fast16_t : the distance between tuple_1 and tuple_2
 ****************************************************************************/
-// Different/ better way to indicate error on return?-> make it a int_fast32_t, return -1 or something?
-//uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_1, const std::vector<uint_fast16_t>& tuple_2, const uint_fast16_t num_entries)
 uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder, size_t start_index_1, size_t start_index_2, const uint_fast16_t num_entries)
 {
 	uint_fast16_t diff = 0;

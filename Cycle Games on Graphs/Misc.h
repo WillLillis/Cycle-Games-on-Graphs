@@ -148,6 +148,7 @@ bool is_number(std::string input)
 * Returns :
 * - none
 ****************************************************************************/
+// does this work on Mac?
 void erase_lines(uint_fast16_t num_lines)
 {
 	if (num_lines > 0)
@@ -178,11 +179,6 @@ void erase_lines(uint_fast16_t num_lines)
 * Returns :
 * - size_t : the translated 2-D to 1-D index
 ****************************************************************************/
-// Do we want to make the switch from adjacency matrices to listings, and 
-// have this function do the necessary translations?
-// just swap the max value into the row or something 
-// would need to allocate n(n+1)/2 instead of n*n->Talk with Kelvey/ Gates
-	// if directed graphs are at all a possibility, don't do it
 inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_fast16_t col)
 {
 	return ((size_t)num_cols * (size_t)row) + (size_t)col; // casts necessary?

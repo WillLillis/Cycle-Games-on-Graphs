@@ -268,7 +268,8 @@ GAME_STATE play_MAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
 GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const std::vector<uint_fast16_t>* adj_matrix,
-	std::vector<uint_fast16_t>& edge_use_matrix, std::vector<uint_fast16_t>& node_use_list, std::vector<uint_fast16_t>& move_hist, const uint_fast16_t recur_depth, FILE* output)
+	std::vector<uint_fast16_t>& edge_use_matrix, std::vector<uint_fast16_t>& node_use_list, std::vector<uint_fast16_t>& move_hist, 
+	const uint_fast16_t recur_depth, FILE* output)
 {
 	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from curr_node
 	GAME_STATE move_result; // temporarily store the result of a recursive call here
@@ -420,7 +421,8 @@ GAME_STATE play_AAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
 GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const std::vector<uint_fast16_t>* adj_matrix,
-	std::vector<uint_fast16_t>& edge_use_matrix, std::vector<uint_fast16_t>& node_use_list, std::vector<uint_fast16_t>& move_hist, const uint_fast16_t recur_depth, FILE* output)
+	std::vector<uint_fast16_t>& edge_use_matrix, std::vector<uint_fast16_t>& node_use_list, std::vector<uint_fast16_t>& move_hist, 
+	const uint_fast16_t recur_depth, FILE* output)
 {	
 	GAME_STATE move_result; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history

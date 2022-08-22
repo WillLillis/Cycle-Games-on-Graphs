@@ -78,7 +78,7 @@ GRAPH_GEN_INFO avail_graphs[] = {
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
 //#define ALT_RESULT_PATH		"C:\\Users\\willl\\Desktop\\Results"				// ^
 
-#define ERRNO_STRING_LEN	200 // arbitrary max value for Microsoft's error messages, as it appears that strerrorlen_s isn't defined on my machine/ platform
+#define ERRNO_STRING_LEN	1000 // arbitrary max value for Microsoft's error messages, as it appears that strerrorlen_s isn't defined on my machine/ platform
 
 /****************************************************************************
 * print_game_results
@@ -124,9 +124,6 @@ void inline print_game_results(GAME_STATE p1_result)
 * Returns :
 * - bool : true is the directory was successfuly found/ made, false otherwise
 ****************************************************************************/
-// returns true if it finds the valid adjacency info directory, 
-// false otherwise, 
-// how do we want to indicate which graph family for the sub dir?
 bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, uint_fast16_t sub_dir_graph_fam = NUM_GRAPH_FAMS)
 {
 	std::filesystem::path adj_path_temp;
@@ -144,11 +141,11 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	{
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, tell them there's something wrong with it
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate directory variable is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
-		return false;
+			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
+		return false; // indicates an error occurred
 #else
 		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
-			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate directory variable is not defined, the search was completed in the project's current directory.");
+			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is not defined, the search was completed in the project's current directory.");
 		printf("Creating the necessary directory now...\n");
 		if (!std::filesystem::create_directory(adj_path_temp))
 		{
@@ -156,10 +153,10 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 				"Failed to create the specified \"Adjacency_Information\" directory\nRequested path: %s", adj_path_temp.string().c_str());
 			return false;
 		}
-#endif // ALT_ADJ_PATH
 		printf("Done.\nPress [ENTER] to continue...\n");
 		char throw_away = std::getchar();
 		return !fail_on_create; // if fail_on_create is true, we need to return false
+#endif // ALT_ADJ_PATH
 		// there's no reason to continue past this point, beacuse if the "Adjacency_Information" directory wasn't found, then there's no files that can be loaded and played on
 	}
 
@@ -203,8 +200,6 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 * Returns :
 * - bool : true is the directory was successfuly found/ made, false otherwise
 ****************************************************************************/
-// returns true if it finds the valid results directory, and assigns it as the value to the param passed in
-// false otherwise, 
 bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create)
 {
 	std::filesystem::path result_path_temp;
@@ -222,11 +217,11 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 	{
 #ifdef ALT_RESULT_PATH // if the user supplied their own directory for their results, tell them there's something wrong with it
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Unable to find the \"Results\" directory.\nThe alternate directory variable is defined, make sure you supplied a valid path.\n Requested path: %s", result_path_temp.string().c_str());
+			"Unable to find the \"Results\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\n Requested path: %s", result_path_temp.string().c_str());
 		return false;
 #else
 		printf("WARNING: Unable to find the \"Results\" directory.\n");
-		printf("The alternate directory variable is not defined, the search was completed in the project's current directory.\n"); // otherwise we'll do things in the project's current directory
+		printf("The alternate path identifier is not defined, the search was completed in the project's current directory.\n"); // otherwise we'll do things in the project's current directory
 		printf("Creating the necessary directory now...\n");
 		if (!std::filesystem::create_directory(result_path_temp)) // if the call failed to create the directory....
 		{
@@ -249,6 +244,34 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 }
 
 /****************************************************************************
+* get_result_file_name
+*
+* - Takes in a path to an adjacency info file and some other related
+* information, returns a file name for a result file
+*
+* Parameters :
+* - adj_info_path : path to the adjacency info file being used
+* - game_select : indicates what game is being played
+*	- 0 for MAC
+*	- 1 for AAC
+*	- do we want to do an enum for this instead of just arbitrary int values?
+* - starting_node : the node number the game is starting on
+*
+* Returns :
+* - std::string : the generated name for the specified game's result file
+****************************************************************************/
+std::string get_result_file_name(std::filesystem::path adj_info_path,
+	uint_fast16_t game_select, uint_fast16_t starting_node)
+{
+	std::string file_name = adj_info_path.stem().string(); // want a check here to make sure there's a stem?
+	file_name.append(game_select == 0 ? "-MAC-" : "-AAC-");
+	file_name.append(std::to_string(starting_node));
+	file_name.append(".txt");
+
+	return file_name;
+}
+
+/****************************************************************************
 * user_plays
 *
 * - Function called when the user elects to play a game on a specified
@@ -267,7 +290,6 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 ****************************************************************************/
 // this is kind of long...look for ways to break up?
 // want to change [BACK] options to go back a step in param selection, instead of back to the file selection page?
-// also needs LOTS of testing...->seems to be working?
 void user_plays(std::filesystem::path adj_info_path)
 {
 	if (!std::filesystem::directory_entry(adj_info_path).exists())
@@ -364,6 +386,10 @@ void user_plays(std::filesystem::path adj_info_path)
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to find and/ or create the \"Results\" sub-directory to store the results of the loud run.");
+			if (adj_info != NULL)
+			{
+				delete adj_info;
+			}
 			return;
 		}
 	}
@@ -421,16 +447,9 @@ void user_plays(std::filesystem::path adj_info_path)
 	{
 		std::vector<uint_fast16_t> move_hist(num_nodes);
 
-		// do we want to shove the file name generation inside a function?
 		FILE* result_stream;
-		std::string file_name = adj_info_path.stem().string();
-		file_name.append(game_select == 0 ? " -MAC- " : " -AAC- ");
-		file_name.append("SN "); // SN for "Starting Node"
-		file_name.append(std::to_string(node_select));
-		file_name.append(".txt");
+		std::string file_name = get_result_file_name(adj_info_path, game_select, node_select);
 		result_path.append(file_name);
-		// want to add some sort of versioning here so we don't automatically overwrite old files?
-
 #ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 		_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 		errno_t err = fopen_s(&result_stream, result_path.string().c_str(), "w"); 
@@ -451,7 +470,6 @@ void user_plays(std::filesystem::path adj_info_path)
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
 #endif // WIN32
-
 			if (adj_info != NULL)
 			{
 				delete adj_info;
@@ -634,7 +652,6 @@ void play_menu()
 	play_menu_subdir(adj_path); // and if so then start browsing
 }
 
-// Make similar function for results file naming?
 /****************************************************************************
 * get_adj_info_file_name
 *
