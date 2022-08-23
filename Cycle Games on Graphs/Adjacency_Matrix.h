@@ -182,7 +182,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 				if (!(curr < file_length && data[curr] == ','))
 				{
 					display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-						"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+						"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a comma when one was expected.\nFile path: %s",
 						file_path.string().c_str());
 					return adj_matrix;
 				}
@@ -196,10 +196,11 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 				curr += num_digits(node_2); // advance to the first char past that of the number's
 				if (curr < file_length) // if we're not at the end of the file...
 				{
-					if (!(data[curr] == ADJ_FILE_DELIM)) // ...there should be a newline character next
+					// extra OR added to allow for the continued use of old files with the '\n' delimiter, should be fine to leave this here
+					if (!(data[curr] == ADJ_FILE_DELIM || data[curr] == '\n')) // ...there should be a newline character next
 					{
 						display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-							"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+							"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a delimiter when one was expected.\nFile path: %s",
 							file_path.string().c_str());
 						return adj_matrix;
 					}
@@ -214,7 +215,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
 			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-				"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+				"Issue parsing the adjacency information file loaded into memory.\nUnspecified parsing error.\nFile path: %s",
 				file_path.string().c_str());
 			return adj_matrix;
 		}
