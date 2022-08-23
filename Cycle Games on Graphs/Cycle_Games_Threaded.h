@@ -7,6 +7,17 @@
 	// A) This file is a mess
 	// B) I need to rethink the multithreaded plan a bit before I fix it
 
+/*
+* 
+* Instead of malloc-ing an array of structs, we'll probably just have a vector of them
+* Each time we want to spawn a new thread, we'll add a new instance of the struct onto the vector
+* Once a thread is done executing, we'll look at its return value and then remove it from the struct
+* The only thing I'm still uncertain of is how to deal with the std::thread in the struct's constructor
+* so that we avoid the operator= errors I was getting with the original approach
+*	- probably just need to talk with nullbyte about it
+*
+*/
+
 // going to start drafting the multithreaded version here
 // The way to do this was a lot less self evident to me as compared to the normal MAC/AAC play game functions
 // There's definitely a better way to do this, but here's a first go at it

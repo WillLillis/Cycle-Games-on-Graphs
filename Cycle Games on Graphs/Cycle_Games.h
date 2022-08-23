@@ -161,10 +161,10 @@ void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, std::vector<uint_
 		return;
 	}
 
-	fprintf(output, "%hhu", move_hist[0]); // making the assumption there's at least one entry
+	fprintf(output, "%hu", (uint16_t)move_hist[0]); // making the assumption there's at least one entry
 	for (uint_fast16_t i = 1; i <= recur_depth; i++)
 	{
-		fprintf(output, "->%hhu", (uint16_t)move_hist[i]); // added cast to provide consistent operation, regardless of what the compiler decided for uint_fast16_tss
+		fprintf(output, "->%hu", (uint16_t)move_hist[i]); // added cast to provide consistent operation, regardless of what the compiler decided for uint_fast16_tss
 	}
 }
 
@@ -275,7 +275,7 @@ GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 	GAME_STATE move_result; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history
 
-	progress_log(output, recur_depth, "%s Reached node %hhu\n", recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node);
+	progress_log(output, recur_depth, "%s Reached node %hu\n", recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node);
 
 	progress_log(output, recur_depth, "Checking for any cycles that are one move away.\n");
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++)
@@ -283,14 +283,14 @@ GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == ADJACENT // if curr_node and curr_neighbor are adjacent
 			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) // and the edge between them is unused
 		{
-			progress_log(output, recur_depth, "%s Checking the play from node %hhu to %hhu\n", 
-				recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor);
+			progress_log(output, recur_depth, "%s Checking the play from node %hu to %hu\n", 
+				recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor);
 			open_edges++;
 			if (node_use_list[curr_neighbor] == USED) // if the neighbor has been previously visited, going back creates a cycle!
 			{
 				progress_log(output, recur_depth, "Cycle detected. Move history: ");
 				fprint_move_hist(output, recur_depth, move_hist);
-				fprintf(output, "->%hhu\n", curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
+				fprintf(output, "->%hu\n", (uint16_t)curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
 				return WIN_STATE;
 			}
 			progress_log(output, recur_depth, "%s No cycle detected\n", recur_depth % 2 == 0 ? "P1:" : "P2:");
@@ -321,11 +321,11 @@ GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
 			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
 			node_use_list[curr_neighbor] = NOT_USED;
-			progress_log(output, recur_depth, "%s Playing from %hhu to %hhu results in a %s. ",
-				recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
+			progress_log(output, recur_depth, "%s Playing from %hu to %hu results in a %s.",
+				recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
 			progress_log(output, 0, "Move history: "); // haven't gone to a new line yet so we set recursion depth to 0
 			fprint_move_hist(output, recur_depth, move_hist);
-			fprintf(output, "->%hhu\n", curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
+			fprintf(output, "->%hu\n", (uint16_t)curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
 			if (move_result == LOSS_STATE) // if the move puts the game into a loss state, then the current state is a win state
 			{
 				return WIN_STATE;
@@ -427,7 +427,7 @@ GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 	GAME_STATE move_result; // temporarily store the result of a recursive call here
 	move_hist[recur_depth] = curr_node; // record the current position in the move history
 
-	progress_log(output, recur_depth, "%s Reached node %hhu\n", recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node);
+	progress_log(output, recur_depth, "%s Reached node %hu\n", recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node);
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++)
 	{
@@ -436,8 +436,8 @@ GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 		{
 			if (node_use_list[curr_neighbor] == NOT_USED) // move doesn't immediately result in a cycle, might as well try it out
 			{
-				progress_log(output, recur_depth, "%s Checking the play from node %hhu to %hhu\n",
-					recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor);
+				progress_log(output, recur_depth, "%s Checking the play from node %hu to %hu\n",
+					recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor);
 				// try making the move along that edge
 				edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = USED;
 				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = USED; // have to mark both entries 
@@ -447,11 +447,11 @@ GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 				edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
 				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
 				node_use_list[curr_neighbor] = NOT_USED;
-				progress_log(output, recur_depth, "%s Playing from %hhu to %hhu results in a %s. ",
-					recur_depth % 2 == 0 ? "P1:" : "P2:", curr_node, curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
+				progress_log(output, recur_depth, "%s Playing from %hu to %hu results in a %s. ",
+					recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
 				progress_log(output, 0, "Move history: ");
 				fprint_move_hist(output, recur_depth, move_hist);
-				fprintf(output, "->%hhu\n", curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
+				fprintf(output, "->%hu\n", (uint16_t)curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
 				if (move_result == LOSS_STATE) // if the move puts the game into a loss state, then the current state is a win state
 				{
 					return WIN_STATE;

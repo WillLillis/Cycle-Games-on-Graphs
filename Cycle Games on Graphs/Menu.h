@@ -311,7 +311,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	if (!(num_nodes > 0))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hhu", (uint16_t)num_nodes);
+			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hu", (uint16_t)num_nodes);
 		return;
 	}
 
@@ -392,8 +392,8 @@ void user_plays(std::filesystem::path adj_info_path)
 	std::string node_select_raw;
 	uint_fast16_t node_select = num_nodes;
 	printf("Select the starting node:\n");
-	printf("[0 - %hhu] Said node\n", num_nodes - 1);
-	printf("[%hhu] [BACK]\n", num_nodes);
+	printf("[0 - %hu] Said node\n", (uint16_t)(num_nodes - 1));
+	printf("[%hu] [BACK]\n", (uint16_t)num_nodes);
 	do
 	{
 		if (bad_input)
@@ -485,7 +485,7 @@ void user_plays(std::filesystem::path adj_info_path)
 		}
 	}
 	
-	printf("\n\nFile: %s, Starting Node: %hhu, Game: %s\n", adj_info_path.filename().string().c_str(), node_select, game_select == 0 ? "MAC" : "AAC");
+	printf("\n\nFile: %s, Starting Node: %hu, Game: %s\n", adj_info_path.filename().string().c_str(), (uint16_t)node_select, game_select == 0 ? "MAC" : "AAC");
 	print_game_results(game_result);
 
 	printf("Press [ENTER] to continue\n");
@@ -1120,7 +1120,7 @@ void generate_menu()
 			printf("Select which type of graph you'd like to generate an adjacency listing for.\n");
 			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_GRAPH_FAMS; curr_choice++)
 			{
-				printf("[%hhu] %s\n", curr_choice, avail_graphs[curr_choice].graph_name.c_str());
+				printf("[%hu] %s\n", (uint16_t)curr_choice, avail_graphs[curr_choice].graph_name.c_str());
 			}
 			printf("[%u] BACK\n", NUM_GRAPH_FAMS);
 

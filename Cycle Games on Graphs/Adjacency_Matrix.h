@@ -134,29 +134,6 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	*num_nodes_out = max_label;
 
 	// now that we have the max label, we know the size of the adjacency matrix
-	/*std::vector<uint_fast16_t>* adj_matrix = NULL; 
-	try
-	{
-		adj_matrix = new std::vector<uint_fast16_t>((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
-	}
-	catch (const std::bad_alloc& err)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
-			"Memory allocation failure caught, the game cannot proceed: %s", err.what());
-		return NULL;
-	}
-	catch (const std::exception& err)
-	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
-			"Unexpected exception caught: %s", err.what());
-		if (adj_matrix != NULL)
-		{
-			delete adj_matrix;
-		}
-		return NULL;
-	}*/
-	//std::vector<uint_fast16_t> adj_matrix((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
-	adj_matrix.resize((size_t)max_label * (size_t)max_label);
 	adj_matrix.assign((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
 
 	uint_fast16_t node_1, node_2; // to temporarily store node values read in from the data block
@@ -166,7 +143,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	if (!(curr < file_length))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Issue parsing the adjacency information file loaded into memory.\n File path: %s",
+			"Issue parsing the adjacency information file loaded into memory.\nReached the end of the file earlier than expected.\nFile path: %s",
 			file_path.string().c_str());
 		return adj_matrix;
 	}
