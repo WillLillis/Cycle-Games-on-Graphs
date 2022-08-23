@@ -5,6 +5,7 @@
 * 
 */
 #pragma once
+#include <vector>
 #include <cstdarg>
 #include <cmath>
 #include <stdio.h>

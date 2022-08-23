@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string>
 #include <filesystem> // Property Pages->Configuration Properties->General->C++ Language Standard->ISO C++ 17 Standard (/std:c++17) (OR NEWER)
+#include <vector>
 #include "Adjacency_Matrix.h"
 #include "Cycle_Games.h"
 #include "Cycle_Games_Threaded.h"
@@ -59,6 +60,20 @@ typedef struct GRAPH_GEN_INFO {
 	void (*gen_func)() = NULL;
 	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
 }GRAPH_GEN_INFO;
+
+// If we want to generalize the above idea for all menu choices, we'd just have to create an instance of the below struct
+// for all the menus (besides the ones that vomit out file/ directory lists...), should be relatively straightforward
+/*typedef struct MENU_ENTRY {
+	std::string print_name{};
+	std::string internal_name{};
+	void (*select_func)() = NULL;
+	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
+}MENU_ENTRY;*/
+// for example...
+/*MENU_ENTRY main_menu_options[] = {
+	MENU_ENTRY{"Play a game", "", play_menu},
+	MENU_ENTRY{"Generate an adjacency listing", "", generate_menu}
+};*/
 
 // Generalize to a menu entry struct-> all functions must be void with no args, should be fine
 GRAPH_GEN_INFO avail_graphs[] = {
@@ -533,12 +548,12 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 		{
 			if (dir_entry.is_directory())
 			{
-				printf("[%03hhu][DIR]  %s\n", entry_index, dir_entry.path().filename().string().c_str());
+				printf("[%03hu][DIR]  %s\n", (uint16_t)entry_index, dir_entry.path().filename().string().c_str());
 				entry_index++;
 			}
 			else if (dir_entry.is_regular_file())
 			{
-				printf("[%03hhu][FILE] %s\n", entry_index, dir_entry.path().filename().string().c_str());
+				printf("[%03hu][FILE] %s\n", (uint16_t)entry_index, dir_entry.path().filename().string().c_str());
 				entry_index++;
 			}
 		}
@@ -546,7 +561,7 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 		{
 			printf("<No valid entries>\n");
 		}
-		printf("[%03hhu][BACK]\n", entry_index);
+		printf("[%03hu][BACK]\n", (uint16_t)entry_index);
 
 		file_selection = entry_index + 1; // initially unacceptable value 
 		bad_selection = false;
@@ -1161,7 +1176,7 @@ void main_menu()
 {
 	// what do we want to do with the welcome screen?
 	printf("Welcome to the Cycle Games on Graphs Research Tool!\n");
-	printf("This code was written and developed by <How do we wanna do names here?>\n"); // thoughts here guys?
+	printf("This code was written and developed by Will Lillis (wlillis@umass.edu)\n");
 	printf("Press [ENTER] to continue\n");
 
 	char throw_away = std::getchar(); 
@@ -1175,9 +1190,9 @@ void main_menu()
 		{
 			clear_screen();
 			
-			printf("[0] Play a game\n");
-			printf("[1] Generate an Adjacency Listing\n");
-			printf("[2] EXIT\n");
+			printf("[000] Play a game\n");
+			printf("[001] Generate an Adjacency Listing\n");
+			printf("[002] EXIT\n");
 
 			std::cin >> menu_choice_raw;
 			std::cin.clear();

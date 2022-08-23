@@ -16,6 +16,7 @@
 #include <exception>
 #include <typeinfo>
 #include <stdexcept>
+#include <vector>
 #include "Misc.h"
 
 /*
