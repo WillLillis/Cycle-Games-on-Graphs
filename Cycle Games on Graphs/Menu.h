@@ -50,6 +50,10 @@ void user_generalized_petersen_gen();
 void user_stacked_prism_gen();
 void user_z_mn_gen();
 
+// same deal with these 
+void play_menu();
+void generate_menu();
+
 // Visual stido is giving me warnings that the above functions don't 
 // have definitions, even though they're clearly defined farther down in the file
 // the code still compiles and runs, but I'd really like to know how to fix this
@@ -63,31 +67,41 @@ typedef struct GRAPH_GEN_INFO {
 
 // If we want to generalize the above idea for all menu choices, we'd just have to create an instance of the below struct
 // for all the menus (besides the ones that vomit out file/ directory lists...), should be relatively straightforward
-/*typedef struct MENU_ENTRY {
-	std::string print_name{};
+typedef struct MENU_ENTRY {
+	std::string display_name{};
 	std::string internal_name{};
 	void (*select_func)() = NULL;
-	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
-}MENU_ENTRY;*/
-// for example...
-/*MENU_ENTRY main_menu_options[] = {
+}MENU_ENTRY;
+
+// menu options for main_menu() function
+MENU_ENTRY main_menu_options[] = {
 	MENU_ENTRY{"Play a game", "", play_menu},
 	MENU_ENTRY{"Generate an adjacency listing", "", generate_menu}
-};*/
+};
 
-// Generalize to a menu entry struct-> all functions must be void with no args, should be fine
-GRAPH_GEN_INFO avail_graphs[] = {
-	GRAPH_GEN_INFO{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
-	GRAPH_GEN_INFO{"Stacked Prism", "Stacked_Prism", user_stacked_prism_gen},
-	GRAPH_GEN_INFO{"Z_m^n", "Z_m^n", user_z_mn_gen}
+#define NUM_MAIN_MENU_OPTIONS	2
+#define MAIN_MENU_PLAY_ENTRY	0
+#define MAIN_MENU_GEN_ENTRY		1
+
+//// Generalize to a menu entry struct-> all functions must be void with no args, should be fine
+//GRAPH_GEN_INFO avail_graphs[] = {
+//	GRAPH_GEN_INFO{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
+//	GRAPH_GEN_INFO{"Stacked Prism", "Stacked_Prism", user_stacked_prism_gen},
+//	GRAPH_GEN_INFO{"Z_m^n", "Z_m^n", user_z_mn_gen}
+//};
+
+MENU_ENTRY gen_menu_options[] = {
+	MENU_ENTRY{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
+	MENU_ENTRY{"Stacked Prism", "Stacked_Prism", user_stacked_prism_gen},
+	MENU_ENTRY{"Z_m^n", "Z_m^n", user_z_mn_gen}
 };
 
 // If the order in the avail_graphs array is changed or a new entry is added, these
 // #define's should be updated accordingly
-#define NUM_GRAPH_FAMS		3
-#define GEN_PET_ENTRY		0
-#define STACKED_PRISM_ENTRY	1
-#define Z_MN_ENTRY			2
+#define NUM_GRAPH_FAMS					3 // change name of this #define?
+#define GEN_MENU_GEN_PET_ENTRY			0
+#define GEN_MENU_STACKED_PRISM_ENTRY	1
+#define GEN_MENU_Z_MN_ENTRY				2
 
 // Leave commented out if you want files in the project's working directory
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
@@ -180,7 +194,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	if (sub_dir_graph_fam >= 0 && sub_dir_graph_fam < NUM_GRAPH_FAMS) // if the specified graph family parameter is valid
 	{
 		graph_fam_subpath = adj_path_temp;
-		graph_fam_subpath.append(avail_graphs[sub_dir_graph_fam].graph_file_name);
+		graph_fam_subpath.append(gen_menu_options[sub_dir_graph_fam].internal_name);
 		std::filesystem::directory_entry graph_fam_subdir(graph_fam_subpath);
 		if (graph_fam_subdir.exists())
 		{
@@ -437,7 +451,6 @@ void user_plays(std::filesystem::path adj_info_path)
 	// Have to mark the starting node as used!
 	node_use[node_select] = USED;
 
-	// implementing the struct array thing here would clean this up a bit
 	GAME_STATE game_result;
 	if (output_select == 0) // Quiet 
 	{
@@ -664,6 +677,8 @@ void play_menu()
 * Parameters :
 * - graph_fam : Which graph family the name is being made for
 * - num_args : the number of optional graph parameters to follow
+*	- uint_fast32_t type chosen for compatability with va_start macro,
+*	as arguments undergo promotion and behavior can be undefined
 * - ... : variable number of optional arguments corresponding to graph 
 * parameters
 *
@@ -672,7 +687,7 @@ void play_menu()
 * information file
 ****************************************************************************/
 // safer way to do va_args than the C way?
-std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_args, ...)
+std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast32_t num_args, ...)
 {
 	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS))
 	{
@@ -682,7 +697,7 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast8_t num_arg
 	}
 
 	#pragma warning(suppress:6385) 
-	std::string file_name = avail_graphs[graph_fam].graph_file_name; // false positive warning pops up here
+	std::string file_name = gen_menu_options[graph_fam].internal_name; // false positive warning pops up here
 	if (num_args == 0) // no graph parameters
 	{
 		file_name.append(".txt");
@@ -749,7 +764,7 @@ void user_generalized_petersen_gen()
 	{
 		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
-			avail_graphs[GEN_PET_ENTRY].graph_name.c_str());
+			gen_menu_options[GEN_MENU_GEN_PET_ENTRY].display_name.c_str());
 
 		printf("(The number of nodes in each of the graph's two \"rings\")\n");
 		printf("n: ");
@@ -780,14 +795,14 @@ void user_generalized_petersen_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_PET_ENTRY))
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_GEN_PET_ENTRY))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Issue found when checking the adjacency information path.");
 		return;
 	}
 
-	std::string file_name = get_adj_info_file_name(GEN_PET_ENTRY, 2, n_param, k_param);
+	std::string file_name = get_adj_info_file_name(GEN_MENU_GEN_PET_ENTRY, 2, n_param, k_param);
 	output_path.append(file_name);
 
 	// can check if file exists here if we want to do some kind of versioning....
@@ -878,7 +893,7 @@ void user_stacked_prism_gen()
 	{
 		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
-			avail_graphs[GEN_PET_ENTRY].graph_name.c_str());
+			gen_menu_options[GEN_MENU_GEN_PET_ENTRY].display_name.c_str());
 
 		printf("(The number of nodes in each concentric ring)\n");
 		printf("m: ");
@@ -908,14 +923,14 @@ void user_stacked_prism_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, STACKED_PRISM_ENTRY))
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_STACKED_PRISM_ENTRY))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Issue found when checking the adjacency information path.");
 		return;
 	}
 
-	std::string file_name = get_adj_info_file_name(STACKED_PRISM_ENTRY, 2, m_param, n_param);
+	std::string file_name = get_adj_info_file_name(GEN_MENU_STACKED_PRISM_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 
 #ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
@@ -1004,7 +1019,7 @@ void user_z_mn_gen()
 	{
 		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
-			avail_graphs[Z_MN_ENTRY].graph_name.c_str());
+			gen_menu_options[GEN_MENU_Z_MN_ENTRY].display_name.c_str());
 
 		printf("(Tuple entries ranging from 0 to m-1)\n");
 		printf("m: ");
@@ -1034,14 +1049,14 @@ void user_z_mn_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, Z_MN_ENTRY)) 
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_Z_MN_ENTRY))
 	{
 		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
 			"Issue found when checking the adjacency information path.");
 		return;
 	}
 
-	std::string file_name = get_adj_info_file_name(Z_MN_ENTRY, 2, m_param, n_param);
+	std::string file_name = get_adj_info_file_name(GEN_MENU_Z_MN_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 	
 
@@ -1135,7 +1150,7 @@ void generate_menu()
 			printf("Select which type of graph you'd like to generate an adjacency listing for.\n");
 			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_GRAPH_FAMS; curr_choice++)
 			{
-				printf("[%hu] %s\n", (uint16_t)curr_choice, avail_graphs[curr_choice].graph_name.c_str());
+				printf("[%hu] %s\n", (uint16_t)curr_choice, gen_menu_options[curr_choice].display_name.c_str());
 			}
 			printf("[%u] BACK\n", NUM_GRAPH_FAMS);
 
@@ -1154,7 +1169,7 @@ void generate_menu()
 		} while (!(graph_choice >= 0 && graph_choice < NUM_GRAPH_FAMS));
 
 		// call appropriate generating function
-		avail_graphs[graph_choice].gen_func();
+		gen_menu_options[graph_choice].select_func();
 	}
 }
 
@@ -1185,14 +1200,15 @@ void main_menu()
 	uint_fast16_t menu_choice = 3; // initialize to unacceptable value
 	while (true)
 	{
-		menu_choice = 3; // have to reset this value for new pass
+		menu_choice = NUM_MAIN_MENU_OPTIONS + 1; // have to reset this value for new pass
 		do
 		{
 			clear_screen();
-			
-			printf("[000] Play a game\n");
-			printf("[001] Generate an Adjacency Listing\n");
-			printf("[002] EXIT\n");
+			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_MAIN_MENU_OPTIONS; curr_choice++)
+			{
+				printf("[%hu] %s\n", (uint16_t)curr_choice, main_menu_options[curr_choice].display_name.c_str());
+			}
+			printf("[%hu] EXIT\n", NUM_MAIN_MENU_OPTIONS);
 
 			std::cin >> menu_choice_raw;
 			std::cin.clear();
@@ -1202,20 +1218,12 @@ void main_menu()
 				continue; 
 			}
 			menu_choice = std::stoul(menu_choice_raw, NULL);
-			if (menu_choice == 2)
+			if (menu_choice == NUM_MAIN_MENU_OPTIONS)
 			{
 				return;
 			}
+		} while (!(menu_choice >= 0 && menu_choice < NUM_MAIN_MENU_OPTIONS));
 
-		} while (!(menu_choice >= 0 && menu_choice <= 2));
-
-		if (menu_choice == 0)
-		{
-			play_menu();
-		}
-		else if (menu_choice == 1)
-		{
-			generate_menu();
-		}
+		main_menu_options[menu_choice].select_func();
 	}
 }
