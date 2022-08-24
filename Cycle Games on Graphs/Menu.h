@@ -1208,7 +1208,7 @@ void main_menu()
 			{
 				printf("[%hu] %s\n", (uint16_t)curr_choice, main_menu_options[curr_choice].display_name.c_str());
 			}
-			printf("[%hu] EXIT\n", NUM_MAIN_MENU_OPTIONS);
+			printf("[%hu] EXIT\n", (uint16_t)NUM_MAIN_MENU_OPTIONS);
 
 			std::cin >> menu_choice_raw;
 			std::cin.clear();
