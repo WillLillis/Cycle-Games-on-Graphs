@@ -696,7 +696,6 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast32_t num_ar
 		return "";
 	}
 
-	#pragma warning(suppress:6385) 
 	std::string file_name = gen_menu_options[graph_fam].internal_name; // false positive warning pops up here
 	if (num_args == 0) // no graph parameters
 	{

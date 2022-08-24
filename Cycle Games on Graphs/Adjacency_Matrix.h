@@ -248,7 +248,7 @@ void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 	// inner ring connections (ew)
 	for (uint_fast16_t i = n; i < (2 * n) - 1; i++)
 	{
-		fprintf(output, "%hu,%hu%c", i, (uint16_t)(((i + k) % n) + n), ADJ_FILE_DELIM);
+		fprintf(output, "%hu,%hu%c", (uint16_t)i, (uint16_t)(((i + k) % n) + n), ADJ_FILE_DELIM);
 	}
 	// also an inner ring connection
 	fprintf(output, "%hu,%hu", (uint16_t)((2 * n) - 1), (uint16_t)(((((2 * n) - 1) + k) % n) + n)); // last entry does NOT get a newline char after it
