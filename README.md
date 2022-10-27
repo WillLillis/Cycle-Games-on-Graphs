@@ -2,8 +2,13 @@
 
 Computer code for playing the combinatorial games <i>Make-A-Cycle</i> (MAC) and <i>Avoid-A-Cycle</i> (AAC). These games were first defined for Cayley graphs in the paper <a href="http://dx.doi.org/10.1515/9783110755411-011">Relator Games on Groups</a>. A second paper discussing the games MAC and AAC is forthcoming (put pre-print link here when ready).
 
-## Compiling on a MacBook/Apple Machine
+## Compiling/ Building
 
-Download the folder <b>Cycle Games on Graphs</b>. You want to compile the file <tt>Source.cpp</tt>. If you do not have a C++ compiler installed, you'll need to get one. 
+Download the folder <b>Cycle Games on Graphs</b>. The project can be built by compiling Source.cpp using at least C++17.  
 
-Include instructions on how to do this here? Or should we update the project with a compiled executable file for both MAC and Windows??
+The project can be built with the provided <b>Makefile<b>, or simply with ```g++ --std=c++17 Source.cpp```.
+  
+
+## Notes
+
+Due to the difference in newline characters between Windows, Mac, and Linux, the provided adjacency files may not work on your machine. This will become evident when you attempt to use a file to simulate a game and received an error while parsing it. There's nothing sacred about the provided adjaency info files in the repo. They can always be regenerated using the tool.
