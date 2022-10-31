@@ -67,7 +67,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	data_stream.open(file_path.string().c_str(), std::fstream::in); // open file with read permissions only
 	if (!data_stream.is_open())
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the adjacency information file.\nRequested path: %s", file_path.string().c_str());
 	}
 
@@ -76,7 +76,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	// allocate a buffer with the length to read all of the file's contents in at once
 	if (!(file_length > 0))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Received an invalid file length.\nRequested path: %s", file_path.string().c_str());
 		return adj_matrix;
 	}
@@ -101,7 +101,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	}
 	else // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
 		return adj_matrix;
 	}
@@ -110,7 +110,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	
 	if(!(curr < file_length))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
 		return adj_matrix;
 	}
@@ -125,7 +125,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 		}
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Error parsing the file searching for the largest node label.");
 			return adj_matrix;
 		}
@@ -143,7 +143,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 	curr = data_start;
 	if (!(curr < file_length))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Issue parsing the adjacency information file loaded into memory.\nReached the end of the file earlier than expected.\nFile path: %s",
 			file_path.string().c_str());
 		return adj_matrix;
@@ -159,7 +159,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 				// we shouldn't be at the end of the file, AND the next character has to be a comma
 				if (!(curr < file_length && data[curr] == ','))
 				{
-					display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+					DISPLAY_ERR(true,
 						"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a comma when one was expected.\nFile path: %s",
 						file_path.string().c_str());
 					return adj_matrix;
@@ -177,7 +177,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 					// extra OR added to allow for the continued use of old files with the '\n' delimiter, should be fine to leave this here
 					if (!(data[curr] == ADJ_FILE_DELIM || data[curr] == '\n')) // ...there should be a newline character next
 					{
-						display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+						DISPLAY_ERR(true,
 							"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a delimiter when one was expected.\nFile path: %s",
 							file_path.string().c_str());
 						return adj_matrix;
@@ -192,7 +192,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 		}
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Issue parsing the adjacency information file loaded into memory.\nUnspecified parsing error.\nFile path: %s",
 				file_path.string().c_str());
 			return adj_matrix;
@@ -229,8 +229,7 @@ void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 {
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Invalid file stream.");
+		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
 	fprintf(output, "Adjacency_Listing\n"); // label at the top of the file so we know what it is
@@ -276,8 +275,7 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 {
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Invalid file stream.");
+		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
 	fprintf(output, "Adjacency_Listing\n"); // label at the top of the file so we know what it is
@@ -453,8 +451,7 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 {
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"Invalid file stream.");
+		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
 

@@ -39,6 +39,12 @@
 // If the code isn't compiling because __FUNCSIG__ isn't defined, uncomment the line below
 //#define __FUNCSIG__  "<Function name macro error>"
 
+// going to define the below function-like macro expression to ease the use of the display_error function
+// someone editing the code can skip passing in __FILE__, _LINE__, __FUNCSIG__ as the first args to display_error...
+// ...and instead simply type DISPLAY_ERR(user_clear, err_msg, ...)
+
+#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg, __VA_ARGS__)
+
 /****************************************************************************
 * display_error
 *
@@ -103,7 +109,7 @@ inline void clear_screen()
 #elif  defined(__linux__) || defined(__unix__) || defined(__APPLE__) || defined(__MACH__)
 	system("clear");
 #else
-	display_error(__FILE__, __LINE__, __FUNCSIG__, false, 
+	DISPLAY_ERR(false,
 		"Failed to clear the screen. Unable to identify operating system in use.");
 #endif // _WIN32 OR _WIN64
 }
@@ -213,8 +219,7 @@ size_t get_file_length(std::fstream* file)
 {
 	if (!(*file).is_open())
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"The supplied file stream is not open.");
+		DISPLAY_ERR(true, "The supplied file stream is not open.");
 		return 0;
 	}
 	(*file).ignore(std::numeric_limits<std::streamsize>::max());

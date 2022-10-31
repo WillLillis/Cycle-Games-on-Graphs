@@ -169,17 +169,18 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 	if (!adj_dir.exists()) // if we can't find the directory....
 	{
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, tell them there's something wrong with it
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
 		return false; // indicates an error occurred
 #else
-		display_error(__FILE__, __LINE__, __FUNCSIG__, false,
+		DISPLAY_ERR(false,
 			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is not defined, the search was completed in the project's current directory.");
 		printf("Creating the necessary directory now...\n");
 		if (!std::filesystem::create_directory(adj_path_temp))
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to create the specified \"Adjacency_Information\" directory\nRequested path: %s", adj_path_temp.string().c_str());
+			
 			return false;
 		}
 		printf("Done.\nPress [ENTER] to continue...\n");
@@ -245,7 +246,7 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 	if (!result_dir.exists()) // if we can't find the directory...
 	{
 #ifdef ALT_RESULT_PATH // if the user supplied their own directory for their results, tell them there's something wrong with it
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Unable to find the \"Results\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\n Requested path: %s", result_path_temp.string().c_str());
 		return false;
 #else
@@ -254,7 +255,7 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 		printf("Creating the necessary directory now...\n");
 		if (!std::filesystem::create_directory(result_path_temp)) // if the call failed to create the directory....
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, false,
+			DISPLAY_ERR(false,
 				"Failed to create the specified \"Results\" directory\nRequested path: %s", result_path_temp.string().c_str());
 			return false;
 		}
@@ -323,7 +324,7 @@ void user_plays(std::filesystem::path adj_info_path)
 {
 	if (!std::filesystem::directory_entry(adj_info_path).exists())
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Supplied adjacency info file was not found/does not exist\nRequested path: %s", adj_info_path.string().c_str());
 		return;
 	}
@@ -333,13 +334,13 @@ void user_plays(std::filesystem::path adj_info_path)
 	std::vector<uint_fast16_t> adj_info = load_adjacency_info(adj_info_path, &num_nodes, &load_success); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
 	if (load_success == false)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"An error occurred while attempting to load adjacency information");
 		return;
 	}
 	if (!(num_nodes > 0))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hu", (uint16_t)num_nodes);
 		return;
 	}
@@ -410,7 +411,7 @@ void user_plays(std::filesystem::path adj_info_path)
 	{
 		if (!verify_results_path(&result_path, false))
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to find and/ or create the \"Results\" sub-directory to store the results of the loud run.");
 			return;
 		}
@@ -483,12 +484,12 @@ void user_plays(std::filesystem::path adj_info_path)
 		{
 			char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 			strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", result_path.string().c_str(), err_buff);
 #else
 		if (result_stream == NULL)
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
 #endif // WIN32
 			return;
@@ -507,7 +508,7 @@ void user_plays(std::filesystem::path adj_info_path)
 			int close_err = fclose(result_stream);
 			if (close_err != 0)
 			{
-				display_error(__FILE__, __LINE__, __FUNCSIG__, false,
+				DISPLAY_ERR(false,
 					"Failed to properly close the output file.\nPath associated with file stream: %s", result_path.string().c_str());
 			}
 		}
@@ -538,7 +539,7 @@ void play_menu_subdir(std::filesystem::path curr_dir)
 {
 	if (!std::filesystem::directory_entry(curr_dir).exists())
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to find the specified subdirectory.\nRequested path: %s", curr_dir.string().c_str());
 		return;
 	}
@@ -657,7 +658,7 @@ void play_menu()
 
 	if (!verify_adj_info_path(&adj_path, true)) // make sure the adjacency info directory is there
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Issues with/ couldn't find the \"Adjacency_Information\" directory.\nReturned path: %s", adj_path.string().c_str());
 	}
 
@@ -691,7 +692,7 @@ std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast32_t num_ar
 {
 	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true, 
+		DISPLAY_ERR(true,
 			"Invalid graph family parameter supplied to generate the file name.");
 		return "";
 	}
@@ -796,7 +797,7 @@ void user_generalized_petersen_gen()
 	std::filesystem::path output_path;
 	if (!verify_adj_info_path(&output_path, false, GEN_MENU_GEN_PET_ENTRY))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
 	}
@@ -818,13 +819,13 @@ void user_generalized_petersen_gen()
 	{
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", 
 			output_path.string().c_str(), err_buff);
 #else
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
 #endif // WIN32
 		return;
@@ -836,7 +837,7 @@ void user_generalized_petersen_gen()
 		int close_err = fclose(output);
 		if (close_err != 0)
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
 			return;
@@ -924,7 +925,7 @@ void user_stacked_prism_gen()
 	std::filesystem::path output_path;
 	if (!verify_adj_info_path(&output_path, false, GEN_MENU_STACKED_PRISM_ENTRY))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
 	}
@@ -944,12 +945,12 @@ void user_stacked_prism_gen()
 	{
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
 	if(output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str());
 #endif // WIN32
 		return;
@@ -962,7 +963,7 @@ void user_stacked_prism_gen()
 		int close_err = fclose(output);
 		if (close_err != 0)
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
 			return;
@@ -1050,7 +1051,7 @@ void user_z_mn_gen()
 	std::filesystem::path output_path;
 	if (!verify_adj_info_path(&output_path, false, GEN_MENU_Z_MN_ENTRY))
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
 	}
@@ -1072,12 +1073,12 @@ void user_z_mn_gen()
 		//strerrorlen_s(err); // looks like this isn't defined on my machine :(
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
 	if(output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
 #endif // WIN32
 		return;
@@ -1090,7 +1091,7 @@ void user_z_mn_gen()
 		int close_err = fclose(output);
 		if (close_err != 0)
 		{
-			display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
 			return;

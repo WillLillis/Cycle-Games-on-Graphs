@@ -88,7 +88,7 @@ void fprint_indent(FILE* output, uint_fast16_t num_indent)
 {
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
+		DISPLAY_ERR(true,
 			"The supplied file stream is invalid. Nothing will be written.");
 		return;
 	}
@@ -122,8 +122,7 @@ void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ..
 {
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"The supplied file stream is invalid. Nothing will be written.");
+		DISPLAY_ERR(true, "The supplied file stream is invalid. Nothing will be written.");
 		return;
 	}
 
@@ -156,8 +155,7 @@ void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, std::vector<uint_
 {
 	if (output == NULL)
 	{
-		display_error(__FILE__, __LINE__, __FUNCSIG__, true,
-			"The supplied file stream is invalid. Nothing will be written.");
+		DISPLAY_ERR(true, "The supplied file stream is invalid. Nothing will be written.");
 		return;
 	}
 
