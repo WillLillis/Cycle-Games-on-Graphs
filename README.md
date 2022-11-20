@@ -4,7 +4,7 @@ Computer code for playing the combinatorial games <i>Make-A-Cycle</i> (MAC) and 
 
 ## Compiling/ Building
 
-Download the folder <b>Cycle Games on Graphs</b>. The project can be built by compiling Source.cpp using at least C++17.  
+Download the folder <b>Cycle Games on Graphs</b>. The project can be built by compiling Source.cpp using at least C++20.  
 
 The project can be built with the provided <b>Makefile<b>, or simply with ```g++ --std=c++20 Source.cpp```.
   
