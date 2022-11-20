@@ -114,6 +114,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
 		return adj_matrix;
 	}
+	// loop to find the max label in the adjacency listing file
 	while (curr < file_length)
 	{
 		if (std::isdigit(data[curr]))
@@ -160,7 +161,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 				if (!(curr < file_length && data[curr] == ','))
 				{
 					DISPLAY_ERR(true,
-						"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a comma when one was expected.\nFile path: %s",
+						"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a comma when one was expected, or EOF was encountered unexpectedly.\nFile path: %s",
 						file_path.string().c_str());
 					return adj_matrix;
 				}
@@ -175,7 +176,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 				if (curr < file_length) // if we're not at the end of the file...
 				{
 					// extra OR added to allow for the continued use of old files with the '\n' delimiter, should be fine to leave this here
-					if (!(data[curr] == ADJ_FILE_DELIM || data[curr] == '\n')) // ...there should be a newline character next
+					if (!(data[curr] == ADJ_FILE_DELIM || data[curr] == '\n')) // ...there should be a newline (or our updated delimiter) character next
 					{
 						DISPLAY_ERR(true,
 							"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a delimiter when one was expected.\nFile path: %s",
@@ -184,13 +185,13 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 					}
 				}
 				curr++; // advance one more character to skip the newline char
-				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT;
-				adj_matrix[index_translation(max_label, node_2, node_1)] = ADJACENT;
+				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT; // markt the appropriate entries in the adjacency matrix
+				adj_matrix[index_translation(max_label, node_2, node_1)] = ADJACENT; // ^
 				second_node = false;
 				continue;
 			}
 		}
-		else // something went wrong, return a NULL pointer to indicate an error
+		else // something went wrong, return the empty vector but don't set the success_out flag
 		{
 			DISPLAY_ERR(true,
 				"Issue parsing the adjacency information file loaded into memory.\nUnspecified parsing error.\nFile path: %s",
@@ -208,6 +209,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 // then write it all at once?-> won't matter as much as the reads because write buffering is a thing
 // but may still be the best practice
 // would need to develop means to calculating the required buffer size beforehand....
+	// this isn't something that's getting called repeatedly, delay likely not to be an issue
 /****************************************************************************
 * generalized_petersen_gen
 *
@@ -319,6 +321,8 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 * stop giving me warnings, so I decided to do it with a single dimensional array, where 
 * the tuples are just laid out next to eachother, and it's more reliant on the function
 * using this stored info to know what's what
+*	- this implementation should be more efficient, but maybe a little more confusing at first glance
+*	- might want to actually put these functions into a class to make things a little clearer...something to look into
 * 
 */
 
@@ -482,6 +486,8 @@ void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 			* 
 			*/
 			//if (tuple_diff(member_list + (i * n), member_list + (j * n), n) == 1)
+				// looking back I think this is just how C/C++ pointer arithmetic works, not sure 
+				// what idea I had in mind before that
 			if(tuple_diff(member_list, i * n, j * n, n) == 1)
 			{
 				if (has_entry == true) // doing this to avoid a newline character at the end of the file

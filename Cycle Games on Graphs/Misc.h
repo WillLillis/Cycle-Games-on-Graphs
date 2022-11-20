@@ -43,7 +43,14 @@
 // someone editing the code can skip passing in __FILE__, _LINE__, __FUNCSIG__ as the first args to display_error...
 // ...and instead simply type DISPLAY_ERR(user_clear, err_msg, ...)
 
-#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg, __VA_ARGS__)
+//#if defined(_WIN32)
+//	#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg  __VA_OPT__(,) __VA_ARGS__)
+//#else
+//	#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg, __VA_ARGS__)
+//#endif // _WIN32
+
+#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg  __VA_OPT__(,) __VA_ARGS__)
+
 
 /****************************************************************************
 * display_error
@@ -155,7 +162,7 @@ bool is_number(std::string input)
 * Returns :
 * - none
 ****************************************************************************/
-// does this work on Mac?
+// does this work on Mac?-> seems to be the case
 void erase_lines(uint_fast16_t num_lines)
 {
 	if (num_lines > 0)
@@ -220,6 +227,7 @@ size_t get_file_length(std::fstream* file)
 	if (!(*file).is_open())
 	{
 		DISPLAY_ERR(true, "The supplied file stream is not open.");
+		DISPLAY_ERR(true, "test", 5);
 		return 0;
 	}
 	(*file).ignore(std::numeric_limits<std::streamsize>::max());
