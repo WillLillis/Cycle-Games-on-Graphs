@@ -43,14 +43,8 @@
 // someone editing the code can skip passing in __FILE__, _LINE__, __FUNCSIG__ as the first args to display_error...
 // ...and instead simply type DISPLAY_ERR(user_clear, err_msg, ...)
 
-//#if defined(_WIN32)
-//	#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg  __VA_OPT__(,) __VA_ARGS__)
-//#else
 //	#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg, __VA_ARGS__)
-//#endif // _WIN32
-
 #define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg  __VA_OPT__(,) __VA_ARGS__)
-
 
 /****************************************************************************
 * display_error
@@ -76,7 +70,7 @@
 * Returns :
 * - none 
 ****************************************************************************/
-void display_error(const char* file_name, int line_num, const char* func_sig, bool user_clear, const char* err_msg, ...)
+void display_error(const char* file_name, const int line_num, const char* func_sig, const bool user_clear, const char* err_msg, ...)
 {
 	printf("ERROR: ");
 
@@ -134,7 +128,7 @@ inline void clear_screen()
 * Returns :
 * - bool : true if input is a number, false otherwise
 ****************************************************************************/
-bool is_number(std::string input)
+bool is_number(const std::string input)
 {
 	bool non_empty = false;
 	for (char c : input) // scary modern C++ voodoo magic iterator
@@ -163,7 +157,7 @@ bool is_number(std::string input)
 * - none
 ****************************************************************************/
 // does this work on Mac?-> seems to be the case
-void erase_lines(uint_fast16_t num_lines)
+void erase_lines(const uint_fast16_t num_lines)
 {
 	if (num_lines > 0)
 	{
@@ -193,7 +187,7 @@ void erase_lines(uint_fast16_t num_lines)
 * Returns :
 * - size_t : the translated 2-D to 1-D index
 ****************************************************************************/
-inline size_t index_translation(uint_fast16_t num_cols, uint_fast16_t row, uint_fast16_t col)
+inline size_t index_translation(const uint_fast16_t num_cols, const uint_fast16_t row, const uint_fast16_t col)
 {
 	return ((size_t)num_cols * (size_t)row) + (size_t)col; // casts necessary?
 }
@@ -227,7 +221,6 @@ size_t get_file_length(std::fstream* file)
 	if (!(*file).is_open())
 	{
 		DISPLAY_ERR(true, "The supplied file stream is not open.");
-		DISPLAY_ERR(true, "test", 5);
 		return 0;
 	}
 	(*file).ignore(std::numeric_limits<std::streamsize>::max());
@@ -250,7 +243,7 @@ size_t get_file_length(std::fstream* file)
 * Returns :
 * - size_t : the required quantity of digits
 ****************************************************************************/
-inline size_t num_digits(uint_fast16_t input)
+inline size_t num_digits(const uint_fast16_t input)
 {
 	return input == 0 ? 1 : (size_t)std::log10(input) + 1;
 }

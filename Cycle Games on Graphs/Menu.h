@@ -121,7 +121,7 @@ MENU_ENTRY gen_menu_options[] = {
 * Returns :
 * - none
 ****************************************************************************/
-void inline print_game_results(GAME_STATE p1_result)
+void inline print_game_results(const GAME_STATE p1_result)
 {
 	printf("%s Wins!\n", p1_result == WIN_STATE ? "P1" : "P2");
 }
@@ -153,7 +153,7 @@ void inline print_game_results(GAME_STATE p1_result)
 * Returns :
 * - bool : true is the directory was successfuly found/ made, false otherwise
 ****************************************************************************/
-bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, uint_fast16_t sub_dir_graph_fam = NUM_GRAPH_FAMS)
+bool verify_adj_info_path(std::filesystem::path* adj_path, const bool fail_on_create, const uint_fast16_t sub_dir_graph_fam = NUM_GRAPH_FAMS)
 {
 	std::filesystem::path adj_path_temp;
 	
@@ -230,7 +230,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, bool fail_on_create, 
 * Returns :
 * - bool : true is the directory was successfuly found/ made, false otherwise
 ****************************************************************************/
-bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create)
+bool verify_results_path(std::filesystem::path* result_path, const bool fail_on_create)
 {
 	std::filesystem::path result_path_temp;
 
@@ -290,8 +290,8 @@ bool verify_results_path(std::filesystem::path* result_path, bool fail_on_create
 * Returns :
 * - std::string : the generated name for the specified game's result file
 ****************************************************************************/
-std::string get_result_file_name(std::filesystem::path adj_info_path,
-	uint_fast16_t game_select, uint_fast16_t starting_node)
+std::string get_result_file_name(const std::filesystem::path adj_info_path,
+	const uint_fast16_t game_select, const uint_fast16_t starting_node)
 {
 	std::string file_name = adj_info_path.stem().string(); // want a check here to make sure there's a stem?
 	file_name.append(game_select == 0 ? "-MAC-" : "-AAC-");
@@ -320,7 +320,7 @@ std::string get_result_file_name(std::filesystem::path adj_info_path,
 ****************************************************************************/
 // this is kind of long...look for ways to break up?
 // want to change [BACK] options to go back a step in param selection, instead of back to the file selection page?
-void user_plays(std::filesystem::path adj_info_path)
+void user_plays(const std::filesystem::path adj_info_path)
 {
 	if (!std::filesystem::directory_entry(adj_info_path).exists())
 	{
@@ -535,7 +535,7 @@ void user_plays(std::filesystem::path adj_info_path)
 * Returns :
 * - none
 ****************************************************************************/
-void play_menu_subdir(std::filesystem::path curr_dir)
+void play_menu_subdir(const std::filesystem::path curr_dir)
 {
 	if (!std::filesystem::directory_entry(curr_dir).exists())
 	{
@@ -688,7 +688,7 @@ void play_menu()
 * information file
 ****************************************************************************/
 // safer way to do va_args than the C way?
-std::string get_adj_info_file_name(uint_fast16_t graph_fam, uint_fast32_t num_args, ...)
+std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fast32_t num_args, ...)
 {
 	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS))
 	{

@@ -84,7 +84,7 @@ typedef uint_fast8_t PLAYER_SIDE;
 * Returns :
 * - none
 ****************************************************************************/
-void fprint_indent(FILE* output, uint_fast16_t num_indent)
+void fprint_indent(FILE* output, const uint_fast16_t num_indent)
 {
 	if (output == NULL)
 	{
@@ -118,7 +118,7 @@ void fprint_indent(FILE* output, uint_fast16_t num_indent)
 * Returns :
 * - none
 ****************************************************************************/
-void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ...)
+void progress_log(FILE* output, const uint_fast16_t num_indent, const char* format, ...)
 {
 	if (output == NULL)
 	{
@@ -151,7 +151,7 @@ void progress_log(FILE* output, uint_fast16_t num_indent, const char* format, ..
 * Returns :
 * - none
 ****************************************************************************/
-void fprint_move_hist(FILE* output, uint_fast16_t recur_depth, std::vector<uint_fast16_t>& move_hist)
+void fprint_move_hist(FILE* output, const uint_fast16_t recur_depth, std::vector<uint_fast16_t>& move_hist)
 {
 	if (output == NULL)
 	{

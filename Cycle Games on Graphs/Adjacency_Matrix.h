@@ -57,8 +57,8 @@ typedef uint_fast16_t Adjacency_Info;
 * - uint_fast16_t* : pointer to a buffer of size 
 * (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
-// Need to add ability to read in adjacency matrices
-std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, uint_fast16_t* num_nodes_out, bool* success_out)
+// Need to add ability to read in adjacency matrices?
+std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_path, uint_fast16_t* num_nodes_out, bool* success_out)
 {
 	*success_out = false;
 	std::vector<uint_fast16_t> adj_matrix;
@@ -127,7 +127,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 		else // something went wrong, return a NULL pointer to indicate an error
 		{
 			DISPLAY_ERR(true,
-				"Error parsing the file searching for the largest node label.");
+				"Error parsing the file searching for the largest node label.\nIf this adjacency information wasn't created on your machine, try re-generating it now.");
 			return adj_matrix;
 		}
 	}
@@ -185,7 +185,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 					}
 				}
 				curr++; // advance one more character to skip the newline char
-				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT; // markt the appropriate entries in the adjacency matrix
+				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT; // mark the appropriate entries in the adjacency matrix
 				adj_matrix[index_translation(max_label, node_2, node_1)] = ADJACENT; // ^
 				second_node = false;
 				continue;
@@ -227,7 +227,7 @@ std::vector<uint_fast16_t> load_adjacency_info(std::filesystem::path file_path, 
 * Returns :
 * - none
 ****************************************************************************/
-void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
+void generalized_petersen_gen(FILE* output, const uint_fast16_t n, const uint_fast16_t k)
 {
 	if (output == NULL)
 	{
@@ -273,7 +273,7 @@ void generalized_petersen_gen(FILE* output, uint_fast16_t n, uint_fast16_t k)
 * Returns :
 * - none
 ****************************************************************************/
-void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
+void stacked_prism_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (output == NULL)
 	{
@@ -342,7 +342,7 @@ void stacked_prism_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
 * - uint_fast16_t : the index in the array for said entry within the specified 
 * tuple
 ****************************************************************************/
-inline uint_fast16_t tuple_to_index(uint_fast16_t n, uint_fast16_t tuple_num, uint_fast16_t tuple_entry)
+inline uint_fast16_t tuple_to_index(const uint_fast16_t n, const uint_fast16_t tuple_num, const uint_fast16_t tuple_entry)
 {
 	return (n * tuple_num) + tuple_entry;
 }
@@ -364,7 +364,8 @@ inline uint_fast16_t tuple_to_index(uint_fast16_t n, uint_fast16_t tuple_num, ui
 * Returns :
 * - uint_fast16_t : the distance between tuple_1 and tuple_2
 ****************************************************************************/
-uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder, size_t start_index_1, size_t start_index_2, const uint_fast16_t num_entries)
+uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder, 
+	const size_t start_index_1, const size_t start_index_2, const uint_fast16_t num_entries)
 {
 	uint_fast16_t diff = 0;
 
@@ -408,7 +409,7 @@ uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder, size_t 
 * - none
 ****************************************************************************/
 void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fast16_t>& value_holder,
-	uint_fast16_t place_in_tuple, uint_fast16_t* place_in_member_list, uint_fast16_t m, uint_fast16_t n)
+	const uint_fast16_t place_in_tuple, uint_fast16_t* place_in_member_list, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (place_in_tuple < n - 1)
 	{
@@ -451,7 +452,7 @@ void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fa
 * Returns :
 * - none
 ****************************************************************************/
-void z_mn_gen(FILE* output, uint_fast16_t m, uint_fast16_t n)
+void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (output == NULL)
 	{
