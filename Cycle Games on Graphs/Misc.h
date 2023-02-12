@@ -28,7 +28,7 @@
 // need to check for CLANG AND GCC when WIN32 isn't defined
 	// WIN32 or _WIN32?-> WIN32 for the compiler, _WIN32 for the OS?
 
-#if !defined(WIN32)
+#if !defined(_WIN32)
 	#if defined(__clang__) || defined(__GNUC__)
 		#define __FUNCSIG__ __PRETTY_FUNCTION__
 	#else 

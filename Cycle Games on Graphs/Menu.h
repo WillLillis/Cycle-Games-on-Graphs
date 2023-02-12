@@ -472,14 +472,15 @@ void user_plays(const std::filesystem::path adj_info_path)
 		FILE* result_stream;
 		std::string file_name = get_result_file_name(adj_info_path, game_select, node_select);
 		result_path.append(file_name);
-#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 		_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 		errno_t err = fopen_s(&result_stream, result_path.string().c_str(), "w"); 
 #else
 		result_stream = fopen(result_path.string().c_str(), "w");
-#endif // WIN32
+		//fopen_s(&result_stream, result_path.string().c_str(), "w");
+#endif // _WIN32
 
-#ifdef WIN32
+#ifdef _WIN32
 		if (err != 0)
 		{
 			char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
@@ -491,7 +492,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 		{
 			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
-#endif // WIN32
+#endif // _WIN32
 			return;
 		}
 		if (game_select == 0) // MAC
@@ -807,14 +808,14 @@ void user_generalized_petersen_gen()
 
 	// can check if file exists here if we want to do some kind of versioning....
 
-#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else 
 	output = fopen(output_path.string().c_str(), "w");
 #endif // WIN32
 
-#ifdef WIN32
+#ifdef _WIN32
 	if (err != 0)
 	{
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
@@ -933,14 +934,14 @@ void user_stacked_prism_gen()
 	std::string file_name = get_adj_info_file_name(GEN_MENU_STACKED_PRISM_ENTRY, 2, m_param, n_param);
 	output_path.append(file_name);
 
-#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else
 	output = fopen(output_path.string().c_str(), "w");
 #endif // WIN32
 	
-#ifdef WIN32
+#ifdef _WIN32
 	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
 	{
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
@@ -952,7 +953,7 @@ void user_stacked_prism_gen()
 	{
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str());
-#endif // WIN32
+#endif // _WIN32
 		return;
 	}
 
@@ -1060,14 +1061,14 @@ void user_z_mn_gen()
 	output_path.append(file_name);
 	
 
-#ifdef WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
+#ifdef _WIN32 // might as well use Microsoft's error reporting if we're on a windows machine
 	_set_errno(0); // "Always clear errno by calling _set_errno(0) immediately before a call that may set it"
 	errno_t err = fopen_s(&output, output_path.string().c_str(), "w");
 #else
 	output = fopen(output_path.string().c_str(), "w");
 #endif // WIN32
 
-#ifdef WIN32
+#ifdef _WIN32
 	if (err != 0) 
 	{
 		//strerrorlen_s(err); // looks like this isn't defined on my machine :(
@@ -1080,7 +1081,7 @@ void user_z_mn_gen()
 	{
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
-#endif // WIN32
+#endif // _WIN32
 		return;
 	}
 
