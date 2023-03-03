@@ -13,9 +13,9 @@
 #include <cassert>
 #include <filesystem>
 #include <cmath>
-#include <exception>
+#include <exception> // is this being used?
 #include <typeinfo>
-#include <stdexcept>
+#include <stdexcept> // or this?
 #include <vector>
 #include "Misc.h"
 
@@ -65,8 +65,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	std::fstream data_stream;
 
 	data_stream.open(file_path.string().c_str(), std::fstream::in); // open file with read permissions only
-	if (!data_stream.is_open())
-	{
+	if (!data_stream.is_open()) {
 		DISPLAY_ERR(true,
 			"Failed to open the adjacency information file.\nRequested path: %s", file_path.string().c_str());
 	}
@@ -74,8 +73,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	size_t file_length = get_file_length(&data_stream);
 
 	// allocate a buffer with the length to read all of the file's contents in at once
-	if (!(file_length > 0))
-	{
+	if (!(file_length > 0)) {
 		DISPLAY_ERR(true,
 			"Received an invalid file length.\nRequested path: %s", file_path.string().c_str());
 		return adj_matrix;
@@ -91,16 +89,13 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	
 	// BUGBUG will need to tweak here if we use the new delimiter after the adjacency heading ?
 	size_t data_start = 0;
-	while (data_start < file_length && data[data_start] != '\n') // skip over the labels in the first line
-	{
+	while (data_start < file_length && data[data_start] != '\n') { // skip over the labels in the first line
 		data_start++;
 	}
-	if (data_start > 0)
-	{
+	if (data_start > 0) {
 		data_start++; // increment one more time to get past that first newline character
 	}
-	else // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
-	{
+	else { // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
 		DISPLAY_ERR(true,
 			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
 		return adj_matrix;
@@ -108,24 +103,19 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 
 	size_t curr = data_start;
 	
-	if(!(curr < file_length))
-	{
+	if(!(curr < file_length)) {
 		DISPLAY_ERR(true,
 			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
 		return adj_matrix;
 	}
 	// loop to find the max label in the adjacency listing file
-	while (curr < file_length)
-	{
-		if (std::isdigit(data[curr]))
-		{
+	while (curr < file_length) {
+		if (std::isdigit(data[curr])) {
 			temp_label = std::atoi(&data[curr]);
 			max_label = std::max(temp_label, max_label);
 			curr += num_digits(temp_label) + 1; // advance to the next character, and then one more to skip a comma/ newline character
 			continue; // back to the top of the loop
-		}
-		else // something went wrong, return a NULL pointer to indicate an error
-		{
+		} else { // something went wrong, return a NULL pointer to indicate an error
 			DISPLAY_ERR(true,
 				"Error parsing the file searching for the largest node label.\nIf this adjacency information wasn't created on your machine, try re-generating it now.");
 			return adj_matrix;
@@ -142,24 +132,19 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	bool second_node = false; // to track which node (first or second on a given line) we're on
 
 	curr = data_start;
-	if (!(curr < file_length))
-	{
+	if (!(curr < file_length)) {
 		DISPLAY_ERR(true,
 			"Issue parsing the adjacency information file loaded into memory.\nReached the end of the file earlier than expected.\nFile path: %s",
 			file_path.string().c_str());
 		return adj_matrix;
 	}
-	while (curr < file_length)
-	{
-		if (std::isdigit(data[curr]))
-		{
-			if (!second_node) // reading in the first digit in a pair
-			{
+	while (curr < file_length) {
+		if (std::isdigit(data[curr])) {
+			if (!second_node) { // reading in the first digit in a pair
 				node_1 = std::atoi(&data[curr]);
 				curr += num_digits(node_1); // advance to the first char past that of the number's
 				// we shouldn't be at the end of the file, AND the next character has to be a comma
-				if (!(curr < file_length && data[curr] == ','))
-				{
+				if (!(curr < file_length && data[curr] == ',')) {
 					DISPLAY_ERR(true,
 						"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a comma when one was expected, or EOF was encountered unexpectedly.\nFile path: %s",
 						file_path.string().c_str());
@@ -169,15 +154,12 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 				second_node = true;
 				continue;
 			}
-			else // reading in the second digit
-			{
+			else { // reading in the second digit
 				node_2 = std::atoi(&data[curr]);
 				curr += num_digits(node_2); // advance to the first char past that of the number's
-				if (curr < file_length) // if we're not at the end of the file...
-				{
+				if (curr < file_length) { // if we're not at the end of the file...
 					// extra OR added to allow for the continued use of old files with the '\n' delimiter, should be fine to leave this here
-					if (!(data[curr] == ADJ_FILE_DELIM || data[curr] == '\n')) // ...there should be a newline (or our updated delimiter) character next
-					{
+					if (!(data[curr] == ADJ_FILE_DELIM || data[curr] == '\n')) { // ...there should be a newline (or our updated delimiter) character next
 						DISPLAY_ERR(true,
 							"Issue parsing the adjacency information file loaded into memory.\nDidn't encounter a delimiter when one was expected.\nFile path: %s",
 							file_path.string().c_str());
@@ -191,8 +173,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 				continue;
 			}
 		}
-		else // something went wrong, return the empty vector but don't set the success_out flag
-		{
+		else { // something went wrong, return the empty vector but don't set the success_out flag
 			DISPLAY_ERR(true,
 				"Issue parsing the adjacency information file loaded into memory.\nUnspecified parsing error.\nFile path: %s",
 				file_path.string().c_str());
@@ -229,26 +210,22 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 ****************************************************************************/
 void generalized_petersen_gen(FILE* output, const uint_fast16_t n, const uint_fast16_t k)
 {
-	if (output == NULL)
-	{
+	if (output == NULL) {
 		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
 	fprintf(output, "Adjacency_Listing\n"); // label at the top of the file so we know what it is
 
 	// outer ring connections to adjacent nodes around the ring
-	for (uint_fast16_t i = 0; i < n; i++)
-	{
+	for (uint_fast16_t i = 0; i < n; i++) {
 		fprintf(output, "%hu,%hu%c", (uint16_t)i, (uint16_t)((i + 1) % n), ADJ_FILE_DELIM);
 	}
 	// outer ring to inner ring "spokes"
-	for (uint_fast16_t i = 0; i < n; i++)
-	{
+	for (uint_fast16_t i = 0; i < n; i++) {
 		fprintf(output, "%hu,%hu%c", (uint16_t)i, (uint16_t)(i + n), ADJ_FILE_DELIM);
 	}
 	// inner ring connections (ew)
-	for (uint_fast16_t i = n; i < (2 * n) - 1; i++)
-	{
+	for (uint_fast16_t i = n; i < (2 * n) - 1; i++) {
 		fprintf(output, "%hu,%hu%c", (uint16_t)i, (uint16_t)(((i + k) % n) + n), ADJ_FILE_DELIM);
 	}
 	// also an inner ring connection
@@ -275,28 +252,22 @@ void generalized_petersen_gen(FILE* output, const uint_fast16_t n, const uint_fa
 ****************************************************************************/
 void stacked_prism_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 {
-	if (output == NULL)
-	{
+	if (output == NULL) {
 		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
 	fprintf(output, "Adjacency_Listing\n"); // label at the top of the file so we know what it is
 
-	for (uint_fast16_t i = 0; i < n; i++)
-	{
-		for (uint_fast16_t j = 0; j < m - 1; j++)
-		{
+	for (uint_fast16_t i = 0; i < n; i++) {
+		for (uint_fast16_t j = 0; j < m - 1; j++) {
 			fprintf(output, "%hu,%hu%c", (uint16_t)(j + (i * m)), (uint16_t)(j + 1 + (i * m)), ADJ_FILE_DELIM);
 		}
 		fprintf(output, "%hu,%hu", (uint16_t)(m - 1 + (i * m)), (uint16_t)(i * m));
-		if (i != (n - 1)) // doing this to avoid placing a newline char at the end of the file
-		{
+		if (i != (n - 1)) { // doing this to avoid placing a newline char at the end of the file
 			fprintf(output, "%c", ADJ_FILE_DELIM);
 		}
-		if (i < n - 1)
-		{
-			for (uint_fast16_t k = 0; k < m; k++)
-			{
+		if (i < n - 1) {
+			for (uint_fast16_t k = 0; k < m; k++) {
 				fprintf(output, "%hu,%hu%c", (uint16_t)(k + (i * m)), (uint16_t)(k + ((i + 1) * m)), ADJ_FILE_DELIM);
 			}
 		}
@@ -369,10 +340,9 @@ uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder,
 {
 	uint_fast16_t diff = 0;
 
-	for (uint_fast16_t entry = 0; entry < num_entries; entry++)
-	{
+	for (uint_fast16_t entry = 0; entry < num_entries; entry++) {
 		// cast to regular int16_t necessary, otherwise VS complains about 
-		// "more than one instance of overloaded function matches the argument list
+		// "more than one instance of overloaded function matches the argument list"
 		diff += std::abs((int16_t)((int16_t)tuple_holder[start_index_1 + entry] - (int16_t)tuple_holder[start_index_2 + entry]));
 	}
 	return diff;
@@ -411,22 +381,16 @@ uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder,
 void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fast16_t>& value_holder,
 	const uint_fast16_t place_in_tuple, uint_fast16_t* place_in_member_list, const uint_fast16_t m, const uint_fast16_t n)
 {
-	if (place_in_tuple < n - 1)
-	{
-		for (uint_fast16_t i = 0; i < m; i++)
-		{
+	if (place_in_tuple < (n - 1)) {
+		for (uint_fast16_t i = 0; i < m; i++) {
 			value_holder[place_in_tuple] = i;
 			z_mn_group_gen(member_list, value_holder, place_in_tuple + 1, place_in_member_list, m, n);
 		}
-	}
-	else
-	{
-		for (uint_fast16_t i = 0; i < m; i++)
-		{
+	} else {
+		for (uint_fast16_t i = 0; i < m; i++) {
 			value_holder[place_in_tuple] = i; // replace place_in_tuple with n-1 here?
 
-			for (uint_fast16_t j = 0; j < n; j++)
-			{
+			for (uint_fast16_t j = 0; j < n; j++) {
 				// set the jth entry of the place_in_member_list tuple with the value of value_holder[j]
 				member_list[tuple_to_index(n, *place_in_member_list, j)] = value_holder[j]; 
 			}
@@ -454,8 +418,7 @@ void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fa
 ****************************************************************************/
 void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 {
-	if (output == NULL)
-	{
+	if (output == NULL) {
 		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
@@ -470,10 +433,8 @@ void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 	
 	// output to file
 	fprintf(output, "Adjacency_Listing\n");
-	for (uint_fast16_t i = 0; i < num_tuples; i++)
-	{
-		for (uint_fast16_t j = i; j < num_tuples; j++)
-		{
+	for (uint_fast16_t i = 0; i < num_tuples; i++) {
+		for (uint_fast16_t j = i; j < num_tuples; j++) {
 			/* 
 			* 
 			* Quick note here, it looks like adding a number to the member_list pointer adds in
@@ -489,14 +450,10 @@ void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 			//if (tuple_diff(member_list + (i * n), member_list + (j * n), n) == 1)
 				// looking back I think this is just how C/C++ pointer arithmetic works, not sure 
 				// what idea I had in mind before that
-			if(tuple_diff(member_list, i * n, j * n, n) == 1)
-			{
-				if (has_entry == true) // doing this to avoid a newline character at the end of the file
-				{
+			if(tuple_diff(member_list, i * n, j * n, n) == 1) {
+				if (has_entry == true) { // doing this to avoid a newline character at the end of the file
 					fprintf(output, "%c%hu,%hu", ADJ_FILE_DELIM, (uint16_t)i, (uint16_t)j);
-				}
-				else
-				{
+				} else {
 					fprintf(output, "%hu,%hu", (uint16_t)i, (uint16_t)j);
 
 				}

@@ -166,8 +166,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, const bool fail_on_cr
 
 	std::filesystem::directory_entry adj_dir(adj_path_temp);
 
-	if (!adj_dir.exists()) // if we can't find the directory....
-	{
+	if (!adj_dir.exists()) { // if we can't find the directory....
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, tell them there's something wrong with it
 		DISPLAY_ERR(true,
 			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
@@ -176,8 +175,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, const bool fail_on_cr
 		DISPLAY_ERR(false,
 			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is not defined, the search was completed in the project's current directory.");
 		printf("Creating the necessary directory now...\n");
-		if (!std::filesystem::create_directory(adj_path_temp))
-		{
+		if (!std::filesystem::create_directory(adj_path_temp)) {
 			DISPLAY_ERR(true,
 				"Failed to create the specified \"Adjacency_Information\" directory\nRequested path: %s", adj_path_temp.string().c_str());
 			
@@ -192,13 +190,11 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, const bool fail_on_cr
 
 	// otherwise the Adjacency_Information directory exists...now it's time to check for graph family-specific sub directories
 	std::filesystem::path graph_fam_subpath;
-	if (sub_dir_graph_fam >= 0 && sub_dir_graph_fam < NUM_GRAPH_FAMS) // if the specified graph family parameter is valid
-	{
+	if (sub_dir_graph_fam >= 0 && sub_dir_graph_fam < NUM_GRAPH_FAMS) { // if the specified graph family parameter is valid
 		graph_fam_subpath = adj_path_temp;
 		graph_fam_subpath.append(gen_menu_options[sub_dir_graph_fam].internal_name);
 		std::filesystem::directory_entry graph_fam_subdir(graph_fam_subpath);
-		if (graph_fam_subdir.exists())
-		{
+		if (graph_fam_subdir.exists()) {
 			*adj_path = graph_fam_subpath;
 			return true;
 		}
@@ -243,8 +239,7 @@ bool verify_results_path(std::filesystem::path* result_path, const bool fail_on_
 
 	std::filesystem::directory_entry result_dir(result_path_temp);
 
-	if (!result_dir.exists()) // if we can't find the directory...
-	{
+	if (!result_dir.exists()) { // if we can't find the directory...
 #ifdef ALT_RESULT_PATH // if the user supplied their own directory for their results, tell them there's something wrong with it
 		DISPLAY_ERR(true,
 			"Unable to find the \"Results\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\n Requested path: %s", result_path_temp.string().c_str());
@@ -253,14 +248,11 @@ bool verify_results_path(std::filesystem::path* result_path, const bool fail_on_
 		printf("WARNING: Unable to find the \"Results\" directory.\n");
 		printf("The alternate path identifier is not defined, the search was completed in the project's current directory.\n"); // otherwise we'll do things in the project's current directory
 		printf("Creating the necessary directory now...\n");
-		if (!std::filesystem::create_directory(result_path_temp)) // if the call failed to create the directory....
-		{
+		if (!std::filesystem::create_directory(result_path_temp)) { // if the call failed to create the directory....
 			DISPLAY_ERR(false,
 				"Failed to create the specified \"Results\" directory\nRequested path: %s", result_path_temp.string().c_str());
 			return false;
-		}
-		else // otherwise we're good 
-		{
+		} else { // otherwise we're good 
 			*result_path = result_path_temp;
 			printf("Done.\nPress [ENTER] to continue\n");
 			char throw_away = std::getchar();
@@ -322,8 +314,7 @@ std::string get_result_file_name(const std::filesystem::path adj_info_path,
 // want to change [BACK] options to go back a step in param selection, instead of back to the file selection page?
 void user_plays(const std::filesystem::path adj_info_path)
 {
-	if (!std::filesystem::directory_entry(adj_info_path).exists())
-	{
+	if (!std::filesystem::directory_entry(adj_info_path).exists()) {
 		DISPLAY_ERR(true,
 			"Supplied adjacency info file was not found/does not exist\nRequested path: %s", adj_info_path.string().c_str());
 		return;
@@ -332,14 +323,12 @@ void user_plays(const std::filesystem::path adj_info_path)
 	uint_fast16_t num_nodes = 0; 
 	bool load_success = false;
 	std::vector<uint_fast16_t> adj_info = load_adjacency_info(adj_info_path, &num_nodes, &load_success); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
-	if (load_success == false)
-	{
+	if (load_success == false) {
 		DISPLAY_ERR(true,
 			"An error occurred while attempting to load adjacency information");
 		return;
 	}
-	if (!(num_nodes > 0))
-	{
+	if (!(num_nodes > 0)) {
 		DISPLAY_ERR(true,
 			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hu", (uint16_t)num_nodes);
 		return;
@@ -355,23 +344,19 @@ void user_plays(const std::filesystem::path adj_info_path)
 	printf("[1] AAC\n"); // change to "Avoid-A-Cycle (AAC)" ??
 	//printf("[2] GG\n"); // GG for Generalized Geography?
 	printf("[2] [BACK]\n"); // would have to change to [3]-> want to have a NUM_GAMES define somewhere maybe-> could do a similar struct/ array combo as with the graph families...
-	do
-	{
-		if (bad_input)
-		{
+	do {
+		if (bad_input) {
 			erase_lines(2);
 		}
 		bad_input = true;
 		std::cin >> game_select_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(game_select_raw))
-		{
+		if (!is_number(game_select_raw)) {
 			continue;
 		}
 		game_select = std::stoul(game_select_raw, NULL);
-		if (game_select == 2) // [BACK] option
-		{
+		if (game_select == 2) { // [BACK] option
 			return;
 		}
 	} while (!(game_select >= 0 && game_select <=2));
@@ -384,33 +369,27 @@ void user_plays(const std::filesystem::path adj_info_path)
 	printf("[0] Quiet\n");
 	printf("[1] Loud\n");
 	printf("[2] [BACK]\n");
-	do
-	{
-		if (bad_input)
-		{
+	do {
+		if (bad_input) {
 			erase_lines(2);
 		}
 		bad_input = true;
 		std::cin >> output_select_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(output_select_raw))
-		{
+		if (!is_number(output_select_raw)) {
 			continue;
 		}
 		output_select = std::stoul(output_select_raw, NULL);
-		if (output_select == 2) // [BACK] option
-		{
+		if (output_select == 2) { // [BACK] option
 			return;
 		}
 	} while (!(output_select >= 0 && output_select <= 2));
 
 	// if the user asked for a loud run, make sure the results directory is all set up
 	std::filesystem::path result_path;
-	if (output_select == 1)
-	{
-		if (!verify_results_path(&result_path, false))
-		{
+	if (output_select == 1) {
+		if (!verify_results_path(&result_path, false)) {
 			DISPLAY_ERR(true,
 				"Failed to find and/ or create the \"Results\" sub-directory to store the results of the loud run.");
 			return;
@@ -424,23 +403,19 @@ void user_plays(const std::filesystem::path adj_info_path)
 	printf("Select the starting node:\n");
 	printf("[0 - %hu] Said node\n", (uint16_t)(num_nodes - 1));
 	printf("[%hu] [BACK]\n", (uint16_t)num_nodes);
-	do
-	{
-		if (bad_input)
-		{
+	do {
+		if (bad_input) {
 			erase_lines(2);
 		}
 		bad_input = true;
 		std::cin >> node_select_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(node_select_raw))
-		{
+		if (!is_number(node_select_raw)) {
 			continue;
 		}
 		node_select = std::stoul(node_select_raw, NULL);
-		if (node_select == num_nodes) // [BACK] option
-		{
+		if (node_select == num_nodes) { // [BACK] option
 			return;
 		}
 	} while (!(node_select >= 0 && node_select < num_nodes));
@@ -453,20 +428,16 @@ void user_plays(const std::filesystem::path adj_info_path)
 	node_use[node_select] = USED;
 
 	GAME_STATE game_result;
-	if (output_select == 0) // Quiet 
-	{
-		if (game_select == 0) // MAC
-		{
+	if (output_select == 0) { // Quiet 
+		if (game_select == 0) { // MAC
 			game_result = play_MAC_quiet(node_select, num_nodes, adj_info, edge_use, node_use);
 			//game_result = play_MAC_threaded(node_select, num_nodes, adj_info); // testing this out...let's see how bad it breaks
 		}
-		else // AAC
-		{
+		else { // AAC
 			game_result = play_AAC_quiet(node_select, num_nodes, adj_info, edge_use, node_use);
 		}
 	}
-	else // Loud
-	{
+	else { // Loud
 		std::vector<uint_fast16_t> move_hist(num_nodes);
 
 		FILE* result_stream;
@@ -481,34 +452,28 @@ void user_plays(const std::filesystem::path adj_info_path)
 #endif // _WIN32
 
 #ifdef _WIN32
-		if (err != 0)
-		{
+		if (err != 0) {
 			char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 			strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", result_path.string().c_str(), err_buff);
 #else
-		if (result_stream == NULL)
-		{
+		if (result_stream == NULL) {
 			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
 #endif // _WIN32
 			return;
 		}
-		if (game_select == 0) // MAC
-		{
+		if (game_select == 0) { // MAC
+		
 			game_result = play_MAC_loud(node_select, num_nodes, adj_info, edge_use, node_use, move_hist, 0, result_stream);
-		}
-		else // AAC
-		{
+		}else { // AAC
 			game_result = play_AAC_loud(node_select, num_nodes, adj_info, edge_use, node_use, move_hist, 0, result_stream);
 		}
 
-		if (result_stream != NULL) // if result_stream is NULL, then we don't need to close it?
-		{
+		if (result_stream != NULL) { // if result_stream is NULL, then we don't need to close it?
 			int close_err = fclose(result_stream);
-			if (close_err != 0)
-			{
+			if (close_err != 0) {
 				DISPLAY_ERR(false,
 					"Failed to properly close the output file.\nPath associated with file stream: %s", result_path.string().c_str());
 			}
@@ -538,8 +503,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 ****************************************************************************/
 void play_menu_subdir(const std::filesystem::path curr_dir)
 {
-	if (!std::filesystem::directory_entry(curr_dir).exists())
-	{
+	if (!std::filesystem::directory_entry(curr_dir).exists()) {
 		DISPLAY_ERR(true,
 			"Failed to find the specified subdirectory.\nRequested path: %s", curr_dir.string().c_str());
 		return;
@@ -551,52 +515,42 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 	std::string file_selection_raw;
 	uint_fast16_t file_selection;
 
-	while (true)
-	{
+	while (true) {
 		clear_screen();
 		// is having the full path helpful?
 		printf("%s\n", curr_dir.string().c_str()); // print the current directory so the user knows where they are
 		printf("Select a [FILE] to play on, or a [DIR] to open.\n");
 		entry_index = 0;
 
-		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) 
-		{
-			if (dir_entry.is_directory())
-			{
+		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) {
+			if (dir_entry.is_directory()) {
 				printf("[%03hu][DIR]  %s\n", (uint16_t)entry_index, dir_entry.path().filename().string().c_str());
 				entry_index++;
-			}
-			else if (dir_entry.is_regular_file())
-			{
+			} else if (dir_entry.is_regular_file()) {
 				printf("[%03hu][FILE] %s\n", (uint16_t)entry_index, dir_entry.path().filename().string().c_str());
 				entry_index++;
 			}
 		}
-		if (entry_index == 0)
-		{
+		if (entry_index == 0) {
 			printf("<No valid entries>\n");
 		}
 		printf("[%03hu][BACK]\n", (uint16_t)entry_index);
 
 		file_selection = entry_index + 1; // initially unacceptable value 
 		bad_selection = false;
-		do
-		{
-			if (bad_selection)
-			{
+		do {
+			if (bad_selection) {
 				erase_lines(2); // need to erase 2 lines because hitting enter puts us on a newline, and then we have to erase the original bad line
 			}
 			bad_selection = true;
 			std::cin >> file_selection_raw;
 			std::cin.clear();
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			if (!is_number(file_selection_raw))
-			{
+			if (!is_number(file_selection_raw)) {
 				continue;
 			}
 			file_selection = std::stoul(file_selection_raw, NULL);
-			if (file_selection == entry_index) // [BACK] option
-			{
+			if (file_selection == entry_index) { // [BACK] option
 				return;
 			}
 		} while (!(file_selection >= 0 && file_selection < entry_index));
@@ -607,30 +561,20 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 			// there has to be a better way to do this, right?
 		entry_index = 0;
 		temp_path = curr_dir;
-		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) // starts in cwd
-		{
-			if (dir_entry.is_directory())
-			{
-				if (entry_index == file_selection)
-				{
+		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) { // starts in cwd
+			if (dir_entry.is_directory()) {
+				if (entry_index == file_selection) {
 					temp_path /= dir_entry.path().filename();
 					play_menu_subdir(temp_path);
 					break;
-				}
-				else
-				{
+				} else {
 					entry_index++;
 				}
-			}
-			else if (dir_entry.is_regular_file())
-			{
-				if (entry_index == file_selection)
-				{
+			} else if (dir_entry.is_regular_file()) {
+				if (entry_index == file_selection) {
 					user_plays(dir_entry.path());
 					break;
-				}
-				else
-				{
+				} else {
 					entry_index++;
 				}
 			}
@@ -657,8 +601,7 @@ void play_menu()
 	clear_screen();
 	std::filesystem::path adj_path;
 
-	if (!verify_adj_info_path(&adj_path, true)) // make sure the adjacency info directory is there
-	{
+	if (!verify_adj_info_path(&adj_path, true)) { // make sure the adjacency info directory is there
 		DISPLAY_ERR(true,
 			"Issues with/ couldn't find the \"Adjacency_Information\" directory.\nReturned path: %s", adj_path.string().c_str());
 	}
@@ -691,16 +634,15 @@ void play_menu()
 // safer way to do va_args than the C way?
 std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fast32_t num_args, ...)
 {
-	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS))
-	{
+	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS)) {
 		DISPLAY_ERR(true,
 			"Invalid graph family parameter supplied to generate the file name.");
 		return "";
 	}
 
 	std::string file_name = gen_menu_options[graph_fam].internal_name; // false positive warning pops up here
-	if (num_args == 0) // no graph parameters
-	{
+	if (num_args == 0) { // no graph parameters
+	
 		file_name.append(".txt");
 		return file_name;
 	}
@@ -709,10 +651,8 @@ std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fas
 
 	va_list arg_ptr;
 	va_start(arg_ptr, num_args);
-	for (uint_fast16_t curr_arg = 0; curr_arg < num_args; curr_arg++)
-	{
-		if (curr_arg > 0)
-		{
+	for (uint_fast16_t curr_arg = 0; curr_arg < num_args; curr_arg++) {
+		if (curr_arg > 0) {
 			file_name.append(",");
 		}
 #ifdef WIN32 
@@ -761,8 +701,7 @@ void user_generalized_petersen_gen()
 	uint_fast16_t k_param = 0; // ^
 	std::string n_raw, k_raw;
 
-	do 
-	{
+	do {
 		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
 			gen_menu_options[GEN_MENU_GEN_PET_ENTRY].display_name.c_str());
@@ -772,8 +711,7 @@ void user_generalized_petersen_gen()
 		std::cin >> n_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(n_raw))
-		{
+		if (!is_number(n_raw)) {
 			continue;
 		}
 		n_param = std::stoul(n_raw, NULL);
@@ -783,8 +721,7 @@ void user_generalized_petersen_gen()
 		std::cin >> k_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(k_raw))
-		{
+		if (!is_number(k_raw)) {
 			continue;
 		}
 		k_param = std::stoul(k_raw, NULL);
@@ -796,8 +733,7 @@ void user_generalized_petersen_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_MENU_GEN_PET_ENTRY))
-	{
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_GEN_PET_ENTRY)) {
 		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
@@ -816,16 +752,14 @@ void user_generalized_petersen_gen()
 #endif // WIN32
 
 #ifdef _WIN32
-	if (err != 0)
-	{
+	if (err != 0) {
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", 
 			output_path.string().c_str(), err_buff);
 #else
-	if (output == NULL)
-	{
+	if (output == NULL) {
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
 #endif // WIN32
@@ -833,11 +767,9 @@ void user_generalized_petersen_gen()
 	}
 
 	generalized_petersen_gen(output, n_param, k_param); // call the actual generation function
-	if (output != NULL)
-	{
+	if (output != NULL) {
 		int close_err = fclose(output);
-		if (close_err != 0)
-		{
+		if (close_err != 0) {
 			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
@@ -848,23 +780,20 @@ void user_generalized_petersen_gen()
 	// allow user to play game on newly generated adjacency file
 	std::string exit_choice_raw;
 	uint_fast16_t exit_choice = 2;
-	do
-	{
+	do {
 		printf("Generation completed.\n");
 		printf("[0] Continue\n");
 		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
 		std::cin >> exit_choice_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(exit_choice_raw))
-		{
+		if (!is_number(exit_choice_raw)) {
 			continue;
 		}
 		exit_choice = std::stoul(exit_choice_raw, NULL);
 	} while (!(exit_choice >= 0 && exit_choice <= 1));
 
-	if (exit_choice == 1)
-	{
+	if (exit_choice == 1) {
 		user_plays(output_path);
 	}
 }
@@ -890,8 +819,7 @@ void user_stacked_prism_gen()
 	uint_fast16_t n_param = 0; // ^
 	std::string m_raw, n_raw;
 
-	do
-	{
+	do {
 		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
 			gen_menu_options[GEN_MENU_GEN_PET_ENTRY].display_name.c_str());
@@ -901,8 +829,7 @@ void user_stacked_prism_gen()
 		std::cin >> m_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(m_raw))
-		{
+		if (!is_number(m_raw)) {
 			continue;
 		}
 		m_param = std::stoul(m_raw, NULL);
@@ -912,8 +839,7 @@ void user_stacked_prism_gen()
 		std::cin >> n_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(n_raw))
-		{
+		if (!is_number(n_raw)) {
 			continue;
 		}
 		n_param = std::stoul(n_raw, NULL);
@@ -924,8 +850,7 @@ void user_stacked_prism_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_MENU_STACKED_PRISM_ENTRY))
-	{
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_STACKED_PRISM_ENTRY)) {
 		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
@@ -942,15 +867,13 @@ void user_stacked_prism_gen()
 #endif // WIN32
 	
 #ifdef _WIN32
-	if (err != 0) // Will need to tweak error reporting once we get the generated graphs in the correct directory
-	{
+	if (err != 0) { // Will need to tweak error reporting once we get the generated graphs in the correct directory
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
-	if(output == NULL)
-	{
+	if(output == NULL) {
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str());
 #endif // _WIN32
@@ -959,11 +882,9 @@ void user_stacked_prism_gen()
 
 	stacked_prism_gen(output, m_param, n_param); // call the actual generation function
 
-	if (output != NULL)
-	{
+	if (output != NULL) {
 		int close_err = fclose(output);
-		if (close_err != 0)
-		{
+		if (close_err != 0) {
 			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
@@ -974,23 +895,20 @@ void user_stacked_prism_gen()
 	// allow user to play game on newly generated adjacency file
 	std::string exit_choice_raw;
 	uint_fast16_t exit_choice = 2;
-	do
-	{
+	do {
 		printf("Generation completed.\n");
 		printf("[0] Continue\n");
 		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
 		std::cin >> exit_choice_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(exit_choice_raw))
-		{
+		if (!is_number(exit_choice_raw)) {
 			continue;
 		}
 		exit_choice = std::stoul(exit_choice_raw, NULL);
 	} while (!(exit_choice >= 0 && exit_choice <= 1));
 
-	if (exit_choice == 1)
-	{
+	if (exit_choice == 1) {
 		user_plays(output_path);
 	}
 }
@@ -1016,8 +934,7 @@ void user_z_mn_gen()
 	uint_fast16_t n_param = 0; // ^
 	std::string m_raw, n_raw;
 
-	do
-	{
+	do {
 		clear_screen();
 		printf("Provide the following parameters for the construction of the %s graph.\n",
 			gen_menu_options[GEN_MENU_Z_MN_ENTRY].display_name.c_str());
@@ -1027,8 +944,7 @@ void user_z_mn_gen()
 		std::cin >> m_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(m_raw))
-		{
+		if (!is_number(m_raw)) {
 			continue;
 		}
 		m_param = std::stoul(m_raw, NULL);
@@ -1038,8 +954,7 @@ void user_z_mn_gen()
 		std::cin >> n_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(n_raw))
-		{
+		if (!is_number(n_raw)) {
 			continue;
 		}
 		n_param = std::stoul(n_raw, NULL);
@@ -1050,8 +965,7 @@ void user_z_mn_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_MENU_Z_MN_ENTRY))
-	{
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_Z_MN_ENTRY)) {
 		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
@@ -1069,16 +983,14 @@ void user_z_mn_gen()
 #endif // WIN32
 
 #ifdef _WIN32
-	if (err != 0) 
-	{
+	if (err != 0) {
 		//strerrorlen_s(err); // looks like this isn't defined on my machine :(
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
-	if(output == NULL)
-	{
+	if(output == NULL) {
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
 #endif // _WIN32
@@ -1087,11 +999,9 @@ void user_z_mn_gen()
 
 	z_mn_gen(output, m_param, n_param); // call the actual generation function
 	
-	if (output != NULL)
-	{
+	if (output != NULL) {
 		int close_err = fclose(output);
-		if (close_err != 0)
-		{
+		if (close_err != 0) {
 			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
@@ -1102,23 +1012,20 @@ void user_z_mn_gen()
 	// allow user to play game on newly generated adjacency file
 	std::string exit_choice_raw;
 	uint_fast16_t exit_choice = 2;
-	do
-	{
+	do {
 		printf("Generation completed.\n");
 		printf("[0] Continue\n");
 		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
 		std::cin >> exit_choice_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(exit_choice_raw))
-		{
+		if (!is_number(exit_choice_raw)) {
 			continue;
 		}
 		exit_choice = std::stoul(exit_choice_raw, NULL);
 	} while (!(exit_choice >= 0 && exit_choice <= 1));
 
-	if (exit_choice == 1)
-	{
+	if (exit_choice == 1) {
 		user_plays(output_path);
 	}
 }
@@ -1142,15 +1049,12 @@ void generate_menu()
 	std::string graph_choice_raw; // could just use a char since we have less than 10 choices, but this allows for easier expansion in the future
 	uint_fast16_t graph_choice = NUM_GRAPH_FAMS + 1; // initialize to unacceptable value for weird edge case
 	
-	while (true)
-	{
+	while (true) {
 		graph_choice = NUM_GRAPH_FAMS + 1;
-		do 
-		{
+		do {
 			clear_screen();
 			printf("Select which type of graph you'd like to generate an adjacency listing for.\n");
-			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_GRAPH_FAMS; curr_choice++)
-			{
+			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_GRAPH_FAMS; curr_choice++) {
 				printf("[%hu] %s\n", (uint16_t)curr_choice, gen_menu_options[curr_choice].display_name.c_str());
 			}
 			printf("[%u] BACK\n", NUM_GRAPH_FAMS);
@@ -1158,13 +1062,11 @@ void generate_menu()
 			std::cin >> graph_choice_raw;
 			std::cin.clear();
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			if (!is_number(graph_choice_raw))
-			{
+			if (!is_number(graph_choice_raw)) {
 				continue;
 			}
 			graph_choice = std::stoul(graph_choice_raw, NULL);
-			if (graph_choice == NUM_GRAPH_FAMS) // BACK option
-			{
+			if (graph_choice == NUM_GRAPH_FAMS) { // BACK option
 				return;
 			}
 		} while (!(graph_choice >= 0 && graph_choice < NUM_GRAPH_FAMS));
@@ -1199,14 +1101,11 @@ void main_menu()
 
 	std::string menu_choice_raw;
 	uint_fast16_t menu_choice = 3; // initialize to unacceptable value
-	while (true)
-	{
+	while (true) {
 		menu_choice = NUM_MAIN_MENU_OPTIONS + 1; // have to reset this value for new pass
-		do
-		{
+		do {
 			clear_screen();
-			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_MAIN_MENU_OPTIONS; curr_choice++)
-			{
+			for (uint_fast16_t curr_choice = 0; curr_choice < NUM_MAIN_MENU_OPTIONS; curr_choice++) {
 				printf("[%hu] %s\n", (uint16_t)curr_choice, main_menu_options[curr_choice].display_name.c_str());
 			}
 			printf("[%hu] EXIT\n", (uint16_t)NUM_MAIN_MENU_OPTIONS);
@@ -1214,13 +1113,11 @@ void main_menu()
 			std::cin >> menu_choice_raw;
 			std::cin.clear();
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			if (!is_number(menu_choice_raw))
-			{
+			if (!is_number(menu_choice_raw)) {
 				continue; 
 			}
 			menu_choice = std::stoul(menu_choice_raw, NULL);
-			if (menu_choice == NUM_MAIN_MENU_OPTIONS)
-			{
+			if (menu_choice == NUM_MAIN_MENU_OPTIONS) {
 				return;
 			}
 		} while (!(menu_choice >= 0 && menu_choice < NUM_MAIN_MENU_OPTIONS));
