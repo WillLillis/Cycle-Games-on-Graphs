@@ -211,7 +211,7 @@ inline size_t index_translation(const uint_fast16_t num_cols, const uint_fast16_
 ****************************************************************************/
 // is there a way to save the initial position in the file and later restore it 
 // in a way that the gcc compiler doesn't flip out on us?
-size_t get_file_length(std::fstream* file)
+size_t get_file_length(std::fstream* __restrict file)
 {
 	if (!(*file).is_open()) {
 		DISPLAY_ERR(true, "The supplied file stream is not open.");

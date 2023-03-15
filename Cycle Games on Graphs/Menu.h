@@ -153,7 +153,8 @@ void inline print_game_results(const GAME_STATE p1_result)
 * Returns :
 * - bool : true is the directory was successfuly found/ made, false otherwise
 ****************************************************************************/
-bool verify_adj_info_path(std::filesystem::path* adj_path, const bool fail_on_create, const uint_fast16_t sub_dir_graph_fam = NUM_GRAPH_FAMS)
+bool verify_adj_info_path(std::filesystem::path* __restrict adj_path, const bool fail_on_create, 
+	const uint_fast16_t sub_dir_graph_fam = NUM_GRAPH_FAMS)
 {
 	std::filesystem::path adj_path_temp;
 	
@@ -226,7 +227,7 @@ bool verify_adj_info_path(std::filesystem::path* adj_path, const bool fail_on_cr
 * Returns :
 * - bool : true is the directory was successfuly found/ made, false otherwise
 ****************************************************************************/
-bool verify_results_path(std::filesystem::path* result_path, const bool fail_on_create)
+bool verify_results_path(std::filesystem::path* __restrict result_path, const bool fail_on_create)
 {
 	std::filesystem::path result_path_temp;
 
@@ -997,7 +998,7 @@ void user_z_mn_gen()
 		return;
 	}
 
-	z_mn_gen(output, m_param, n_param); // call the actual generation function
+	bool success = z_mn_gen(output, m_param, n_param); // call the actual generation function
 	
 	if (output != NULL) {
 		int close_err = fclose(output);
@@ -1007,6 +1008,11 @@ void user_z_mn_gen()
 				output_path.string().c_str());
 			return;
 		}
+	}
+
+	if (!success) {
+		DISPLAY_ERR(false, "Failed to generate adjacency matrix! Returning...");
+		return;
 	}
 
 	// allow user to play game on newly generated adjacency file

@@ -13,15 +13,12 @@
 #include <cassert>
 #include <filesystem>
 #include <cmath>
-#include <exception> // is this being used?
-#include <typeinfo>
-#include <stdexcept> // or this?
 #include <vector>
 #include "Misc.h"
 
 /*
 *
-* Because using '\n' as a delimiter breaks compatability for files shared between Windowsand Mac machines,
+* Because using '\n' as a delimiter breaks compatability for files shared between Windows and Mac machines (due to the difference in endline chars),
 * we'll #define the following delimiter character below. The choice is almost entirely arbitrary, it just 
 *	- can't be a number 
 *	- can't be '\n'
@@ -58,7 +55,8 @@ typedef uint_fast16_t Adjacency_Info;
 * (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
 // Need to add ability to read in adjacency matrices?
-std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_path, uint_fast16_t* num_nodes_out, bool* success_out)
+std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_path, 
+	uint_fast16_t* __restrict num_nodes_out, bool* __restrict success_out)
 {
 	*success_out = false;
 	std::vector<uint_fast16_t> adj_matrix;
@@ -208,7 +206,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 * Returns :
 * - none
 ****************************************************************************/
-void generalized_petersen_gen(FILE* output, const uint_fast16_t n, const uint_fast16_t k)
+void generalized_petersen_gen(FILE* __restrict output, const uint_fast16_t n, const uint_fast16_t k)
 {
 	if (output == NULL) {
 		DISPLAY_ERR(true, "Invalid file stream.");
@@ -250,7 +248,7 @@ void generalized_petersen_gen(FILE* output, const uint_fast16_t n, const uint_fa
 * Returns :
 * - none
 ****************************************************************************/
-void stacked_prism_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
+void stacked_prism_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (output == NULL) {
 		DISPLAY_ERR(true, "Invalid file stream.");
@@ -313,9 +311,9 @@ void stacked_prism_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t 
 * - uint_fast16_t : the index in the array for said entry within the specified 
 * tuple
 ****************************************************************************/
-inline uint_fast16_t tuple_to_index(const uint_fast16_t n, const uint_fast16_t tuple_num, const uint_fast16_t tuple_entry)
+inline size_t tuple_to_index(const uint_fast32_t n, const uint_fast32_t tuple_num, const uint_fast32_t tuple_entry)
 {
-	return (n * tuple_num) + tuple_entry;
+	return (size_t)((n * tuple_num) + tuple_entry);
 }
 
 /****************************************************************************
@@ -335,7 +333,7 @@ inline uint_fast16_t tuple_to_index(const uint_fast16_t n, const uint_fast16_t t
 * Returns :
 * - uint_fast16_t : the distance between tuple_1 and tuple_2
 ****************************************************************************/
-uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder, 
+uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& __restrict tuple_holder,
 	const size_t start_index_1, const size_t start_index_2, const uint_fast16_t num_entries)
 {
 	uint_fast16_t diff = 0;
@@ -378,8 +376,8 @@ uint_fast16_t tuple_diff(const std::vector<uint_fast16_t>& tuple_holder,
 * Returns :
 * - none
 ****************************************************************************/
-void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fast16_t>& value_holder,
-	const uint_fast16_t place_in_tuple, uint_fast16_t* place_in_member_list, const uint_fast16_t m, const uint_fast16_t n)
+void z_mn_group_gen(std::vector<uint_fast16_t>& __restrict member_list, std::vector<uint_fast16_t>& __restrict value_holder,
+	const uint_fast16_t place_in_tuple, uint_fast16_t* __restrict place_in_member_list, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (place_in_tuple < (n - 1)) {
 		for (uint_fast16_t i = 0; i < m; i++) {
@@ -416,11 +414,11 @@ void z_mn_group_gen(std::vector<uint_fast16_t>& member_list, std::vector<uint_fa
 * Returns :
 * - none
 ****************************************************************************/
-void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
+bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (output == NULL) {
 		DISPLAY_ERR(true, "Invalid file stream.");
-		return;
+		return false;
 	}
 
 	uint_fast16_t num_tuples = (uint16_t)std::pow(m, n);
@@ -428,6 +426,13 @@ void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 	std::vector<uint_fast16_t> member_list(num_tuples * n);
 	uint_fast16_t place_in_member_list = 0;
 	bool has_entry = false;
+	
+	// common sense checks here to make sure vector allocated all of the memory...
+	if (num_tuples == 0) {
+		DISPLAY_ERR(true, 
+			"Failed to allocate the necessary memory to generate the adjacency listing! Attempted to allocatte %zu bytes.", (size_t)(std::pow(m,n) * n));
+		return false;
+	}
 	
 	z_mn_group_gen(member_list, value_holder, 0, &place_in_member_list, m, n);
 	
@@ -462,4 +467,6 @@ void z_mn_gen(FILE* output, const uint_fast16_t m, const uint_fast16_t n)
 			}
 		}
 	}
+
+	return true;
 }
