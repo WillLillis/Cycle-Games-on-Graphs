@@ -24,7 +24,7 @@
 *	- can't be '\n'
 *	- there may be other restrictions that we haven't encountered yet
 */ 
-#define ADJ_FILE_DELIM	35 // ASCII character code for '#'
+#define ADJ_FILE_DELIM	((char)35) // ASCII character code for '#'
 
 
 // Maybe a little overkill, but some defensive programming here to limit how many elements we'll read in
@@ -103,7 +103,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	
 	if(!(curr < file_length)) {
 		DISPLAY_ERR(true,
-			"File parsing error. End of file read into memory unexpectedly reached. File path: ", file_path.string().c_str());
+			"File parsing error. End of file read into memory unexpectedly reached. File path: %s", file_path.string().c_str());
 		return adj_matrix;
 	}
 	// loop to find the max label in the adjacency listing file
@@ -412,7 +412,7 @@ void z_mn_group_gen(std::vector<uint_fast16_t>& __restrict member_list, std::vec
 *	- the number of entries in each tuple
 *
 * Returns :
-* - none
+* - bool : true to indicate success, false to indicate failure
 ****************************************************************************/
 bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_t n)
 {
@@ -428,7 +428,7 @@ bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_
 	bool has_entry = false;
 	
 	// common sense checks here to make sure vector allocated all of the memory...
-	if (num_tuples == 0) {
+	if (num_tuples == 0 || (member_list.size() != ((size_t)num_tuples * (size_t)n))) {
 		DISPLAY_ERR(true, 
 			"Failed to allocate the necessary memory to generate the adjacency listing! Attempted to allocatte %zu bytes.", (size_t)(std::pow(m,n) * n));
 		return false;
@@ -440,21 +440,6 @@ bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_
 	fprintf(output, "Adjacency_Listing\n");
 	for (uint_fast16_t i = 0; i < num_tuples; i++) {
 		for (uint_fast16_t j = i; j < num_tuples; j++) {
-			/* 
-			* 
-			* Quick note here, it looks like adding a number to the member_list pointer adds in
-			* multiples of uint16_t's, so that's why I'm not adding the size of a tuple in bytes 
-			* directly to the pointer, but rather how many uint16_t entries it should move over
-			* 
-			* I spent some time printing out the addresses for some test cases and it does 
-			* appear to be working correctly at least
-			* 
-			* The specific warning was "expression mixes element counts and byte quantities"
-			* 
-			*/
-			//if (tuple_diff(member_list + (i * n), member_list + (j * n), n) == 1)
-				// looking back I think this is just how C/C++ pointer arithmetic works, not sure 
-				// what idea I had in mind before that
 			if(tuple_diff(member_list, i * n, j * n, n) == 1) {
 				if (has_entry == true) { // doing this to avoid a newline character at the end of the file
 					fprintf(output, "%c%hu,%hu", ADJ_FILE_DELIM, (uint16_t)i, (uint16_t)j);
