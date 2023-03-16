@@ -27,7 +27,7 @@
 // Since we're using Microsoft's __FUNCSIG__ by default, we really only
 // need to check for CLANG AND GCC when WIN32 isn't defined
 	// WIN32 or _WIN32?-> WIN32 for the compiler, _WIN32 for the OS?
-
+// just check if the macros are defined directly????
 #if !defined(_WIN32)
 	#if defined(__clang__) || defined(__GNUC__)
 		#define __FUNCSIG__ __PRETTY_FUNCTION__
@@ -35,9 +35,10 @@
 		#define __FUNCSIG__ __FUNCTION__ // sources online say __FUNCTION__ should work pretty much everywhere
 	#endif // __clang__ || __GNUC__
 #endif // !WIN32
-
-// If the code isn't compiling because __FUNCSIG__ isn't defined, uncomment the line below
-//#define __FUNCSIG__  "<Function name macro error>"
+// and if neither __PRETTY_FUNCTION__ or __FUNCTION__ aren't defined...
+#if !defined(__PRETTY_FUNCTION__) && !defined(__FUNCTION__)
+	#define __FUNCSIG__  "<Function name macro error>"
+#endif
 
 // going to define the below function-like macro expression to ease the use of the display_error function
 // someone editing the code can skip passing in __FILE__, _LINE__, __FUNCSIG__ as the first args to display_error...
@@ -153,7 +154,6 @@ bool is_number(const std::string input)
 * Returns :
 * - none
 ****************************************************************************/
-// does this work on Mac?-> seems to be the case
 void erase_lines(const uint_fast16_t num_lines)
 {
 	if (num_lines > 0) {
@@ -237,7 +237,8 @@ size_t get_file_length(std::fstream* __restrict file)
 * Returns :
 * - size_t : the required quantity of digits
 ****************************************************************************/
-inline size_t num_digits(const uint_fast16_t input)
+template<typename T>
+inline size_t num_digits(const T input)
 {
 	return input == 0 ? 1 : (size_t)std::log10(input) + 1;
 }

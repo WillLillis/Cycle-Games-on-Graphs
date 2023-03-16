@@ -171,11 +171,11 @@ void fprint_move_hist(FILE* __restrict output, const uint_fast16_t recur_depth, 
 * - curr node : the current node in the MAC game, as designated by the ordering
 * given in the graph's adjacency matrix
 * - num_nodes : the number of nodes in the graph
-* - adj_matrix : pointer to an block of memory holding the adjency matrix for 
+* - adj_matrix : reference to a vector holding the adjency matrix for 
 * the graph in question
-* - edge_use_matrix : pointer to an block of memory keeping track of which edges
+* - edge_use_matrix : reference to a vector keeping track of which edges
 * have been used so far in the game
-* - node_use_list : pointer to a block of memory keeping track of which nodes have
+* - node_use_list : reference to a vector keeping track of which nodes have
 * been used so far in the game
 *
 * Returns :
@@ -238,13 +238,13 @@ GAME_STATE play_MAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 * - curr node : the current node in the MAC game, as designated by the ordering
 * given in the graph's adjacency matrix
 * - num_nodes : the number of nodes in the graph
-* - adj_matrix : pointer to an block of memory holding the adjency matrix for
+* - adj_matrix : reference to a vector holding the adjency matrix for
 * the graph in question
-* - edge_use_matrix : pointer to an block of memory keeping track of which edges
+* - edge_use_matrix : reference to a vector keeping track of which edges
 * have been used so far in the game
-* - node_use_list : pointer to a block of memory keeping track of which nodes have
+* - node_use_list : reference to a vector keeping track of which nodes have
 * been used so far in the game
-* - move_hist : pointer to a block of memory keeping track of the current chain's 
+* - move_hist : reference to a vector keeping track of the current chain's 
 * move history
 * - recur_depth : the recursive depth of the current call
 * - output : the file to output our progress to
@@ -330,11 +330,11 @@ GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 * - curr node : the current node in the MAC game, as designated by the ordering
 * given in the graph's adjacency matrix
 * - num_nodes : the number of nodes in the graph
-* - adj_matrix : pointer to an block of memory holding the adjency matrix for
+* - adj_matrix : reference to a vector holding the adjency matrix for
 * the graph in question
-* - edge_use_matrix : pointer to an block of memory keeping track of which edges
+* - edge_use_matrix : reference to a vector keeping track of which edges
 * have been used so far in the game
-* - node_use_list : pointer to a block of memory keeping track of which nodes have
+* - node_use_list : reference to a vector keeping track of which nodes have
 * been used so far in the game
 *
 * Returns :
@@ -382,11 +382,11 @@ GAME_STATE play_AAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 * - curr node : the current node in the MAC game, as designated by the ordering
 * given in the graph's adjacency matrix
 * - num_nodes : the number of nodes in the graph
-* - adj_matrix : pointer to an block of memory holding the adjency matrix for
+* - adj_matrix : reference to a vector holding the adjency matrix for
 * the graph in question
-* - edge_use_matrix : pointer to an block of memory keeping track of which edges
+* - edge_use_matrix : reference to a vector keeping track of which edges
 * have been used so far in the game
-* - node_use_list : pointer to a block of memory keeping track of which nodes have
+* - node_use_list : reference to a vector keeping track of which nodes have
 * been used so far in the game
 *
 * Returns :
