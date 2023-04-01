@@ -14,12 +14,6 @@
 * As a result of this (potentially misguided) decision, the code is going to rewritten 
 * in a loose style that doesn't focus on object oriented things like classes, and hopefully that's ok
 * 
-* I'm a bit torn in regards to using the std::vector class or just raw arrays
-*	- As some of these runs take quite a bit of time, any amount of overhead we can
-*	drop is helpful
-*	- going to go with raw arrays for now, but I may end up backtracking on this for
-*	std::vector's ease of use
-* 
 * The max value of an uint16_t is 65,535
 * I don't see us realistically looking at graphs that would make my use of a uint16_t to 
 * track the edges/ nodes insufficient, so we'll go with that data type for now
@@ -36,6 +30,7 @@
 #include <cassert>
 #include <thread>
 #include <vector>
+#include <cstring> // needed for memset
 
 // We'll define the game state in the following manner
 typedef int_fast16_t GAME_STATE;
@@ -84,6 +79,7 @@ typedef uint_fast8_t PLAYER_SIDE;
 * Returns :
 * - none
 ****************************************************************************/
+// move to Misc.h?
 void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 {
 	if (output == NULL) {
@@ -96,6 +92,54 @@ void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 		fprintf(output, "\t");
 	}
 }
+
+/****************************************************************************
+* fprint_indent
+*
+* - prints the specified number of tabs to the specified file stream
+* - used as indents to indicate the level of recursion in the output files
+* of loud runs
+*
+* Parameters :
+* - output : the file stream to print the tabs to
+* - num_indent : the number of tabs to print
+*
+* Returns :
+* - none
+****************************************************************************/
+// move to Misc.h?
+// trade off of cost from allocation vs. repeated calls to fprintf...will have to do some benchmarking
+//void fprint_indent2(FILE* __restrict output, const uint_fast16_t num_indent)
+//{
+//	if (output == NULL) {
+//		DISPLAY_ERR(true,
+//			"The supplied file stream is invalid. Nothing will be written.");
+//		return;
+//	}
+//	uint_fast16_t arb_thresh = 0;
+//	if (num_indent <= arb_thresh) {
+//		char buff[500 + 1] = {'\t'}; // some constant buffer size known at compile time, maybe make it a #define for transparency
+//		buff[num_indent] = '\0';
+//		fprintf(output, buff);
+//	} else {
+//		char* buff = (char*)malloc(num_indent + 1);
+//		if (buff == NULL) { // if we failed to allocate just complete the writes the slow way...
+//			for (uint_fast16_t i = 0; i < num_indent; i++) {
+//				fprintf(output, "\t");
+//			}
+//		}
+//		else {
+//			memset(buff, (char)'\t', num_indent);
+//			buff[num_indent] = '\0';
+//			fprintf(output, buff);
+//			free(buff);
+//		}
+//	}
+//	// basic approach
+//	for (uint_fast16_t i = 0; i < num_indent; i++) {
+//		fprintf(output, "\t");
+//	}
+//}
 
 /****************************************************************************
 * progress_log

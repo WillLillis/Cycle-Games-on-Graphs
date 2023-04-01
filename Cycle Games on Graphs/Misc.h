@@ -28,17 +28,16 @@
 // need to check for CLANG AND GCC when WIN32 isn't defined
 	// WIN32 or _WIN32?-> WIN32 for the compiler, _WIN32 for the OS?
 // just check if the macros are defined directly????
+
 #if !defined(_WIN32)
 	#if defined(__clang__) || defined(__GNUC__)
 		#define __FUNCSIG__ __PRETTY_FUNCTION__
 	#else 
-		#define __FUNCSIG__ __FUNCTION__ // sources online say __FUNCTION__ should work pretty much everywhere
+		#define __FUNCSIG__ __func__ // sources online say __FUNCTION__ should work pretty much everywhere, but __func__ is more standardized
 	#endif // __clang__ || __GNUC__
 #endif // !WIN32
-// and if neither __PRETTY_FUNCTION__ or __FUNCTION__ aren't defined...
-#if !defined(__PRETTY_FUNCTION__) && !defined(__FUNCTION__)
-	#define __FUNCSIG__  "<Function name macro error>"
-#endif
+
+// it looks like gcc replaces __func__ with "<unknown>" if the macro isn't supported, so the above preprocessor block should be sufficient
 
 // going to define the below function-like macro expression to ease the use of the display_error function
 // someone editing the code can skip passing in __FILE__, _LINE__, __FUNCSIG__ as the first args to display_error...
@@ -106,9 +105,12 @@ void display_error(const char* file_name, const int line_num, const char* func_s
 inline void clear_screen()
 {
 #if defined(_WIN32) || defined(_WIN64)
-	system("cls");
+	system("cls"); // error checking needed here?
 #elif  defined(__linux__) || defined(__unix__) || defined(__APPLE__) || defined(__MACH__)
-	system("clear");
+	int err;
+	if ((err = system("clear")) != 0) {
+		DISPLAY_ERR(false, "Failed to clear screen. Error code returned from \"system\" call: %d.", err);
+	}
 #else
 	DISPLAY_ERR(false,
 		"Failed to clear the screen. Unable to identify operating system in use.");
