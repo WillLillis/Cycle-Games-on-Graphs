@@ -94,7 +94,7 @@ void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 }
 
 /****************************************************************************
-* fprint_indent
+* fprint_indent2
 *
 * - prints the specified number of tabs to the specified file stream
 * - used as indents to indicate the level of recursion in the output files

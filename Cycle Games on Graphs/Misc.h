@@ -27,23 +27,21 @@
 // Since we're using Microsoft's __FUNCSIG__ by default, we really only
 // need to check for CLANG AND GCC when WIN32 isn't defined
 	// WIN32 or _WIN32?-> WIN32 for the compiler, _WIN32 for the OS?
-// just check if the macros are defined directly????
+// Add some #pragma message()'s here to inform person building what macro is being used?
 
 #if !defined(_WIN32)
 	#if defined(__clang__) || defined(__GNUC__)
+		#pragma message "Redefining __FUNCSIG__ to __PRETTY_FUNCTION__"
 		#define __FUNCSIG__ __PRETTY_FUNCTION__
-	#else 
+	#else
+		#pragma message "Redefining __FUNCSIG__ to __func__"
 		#define __FUNCSIG__ __func__ // sources online say __FUNCTION__ should work pretty much everywhere, but __func__ is more standardized
 	#endif // __clang__ || __GNUC__
 #endif // !WIN32
 
-// it looks like gcc replaces __func__ with "<unknown>" if the macro isn't supported, so the above preprocessor block should be sufficient
-
 // going to define the below function-like macro expression to ease the use of the display_error function
 // someone editing the code can skip passing in __FILE__, _LINE__, __FUNCSIG__ as the first args to display_error...
 // ...and instead simply type DISPLAY_ERR(user_clear, err_msg, ...)
-
-//	#define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg, __VA_ARGS__)
 #define DISPLAY_ERR(user_clear, err_msg, ...) display_error(__FILE__, __LINE__, __FUNCSIG__, user_clear, err_msg  __VA_OPT__(,) __VA_ARGS__)
 
 /****************************************************************************
@@ -70,7 +68,8 @@
 * Returns :
 * - none 
 ****************************************************************************/
-void display_error(const char* file_name, const int line_num, const char* func_sig, const bool user_clear, const char* err_msg, ...)
+void display_error(const char* __restrict file_name, const int line_num, 
+	const char* __restrict func_sig, const bool user_clear, const char* __restrict err_msg, ...)
 {
 	printf("ERROR: ");
 
@@ -230,7 +229,7 @@ size_t get_file_length(std::fstream* __restrict file)
 * num_digits
 *
 * - Helper function
-* - Gives the number of digits required to represent an unsigned integer in
+* - Gives the number of digits required to represent an integer in
 * base 10
 *
 * Parameters :
@@ -242,5 +241,13 @@ size_t get_file_length(std::fstream* __restrict file)
 template<typename T>
 inline size_t num_digits(const T input)
 {
-	return input == 0 ? 1 : (size_t)std::log10(input) + 1;
+	// compile time check because function will only work with ints
+	static_assert(!std::is_floating_point_v<T>, "Function template num_digits() only accepts integer types!");
+	if (input == 0) {
+		return 1;
+	} else if (input > 0) {
+		return (size_t)std::log10(std::abs((const int64_t)input)) + 1;
+	} else {
+		return (size_t)std::log10(std::abs((const int64_t)input)) + 2; // negatives need an additional character for the '-' sign
+	}
 }

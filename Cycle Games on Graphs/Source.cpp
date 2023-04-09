@@ -3,6 +3,8 @@
 
 int main()
 {	
+	//printf("Test: %zu\n", num_digits((int)3));
+
 	main_menu();
 
 	return 0;
@@ -16,12 +18,8 @@ int main()
 // want to look into prototyping the multi-threaded version
 // Code to play Generalized Geography game?
 
-// Need to test Microsoft compiler on non-Windows computer->may have issues with use of #ifdef WIN32/ #ifdef _WIN32-> just need to test things out
-	// issues with the x64 build on windows-> need to disable fopen deprecation warnings, look into #define being ignored for __FUNCSIG__-> why isn't WIN32 defined?
-
 // Add build instructions, other things to README
 	// Instructions on adding graph families to generate menu, and menu options in general with the struct
-	// build instructions-> just specify use of C++17...
 
 // could look at redo-ing menu UI
 	// allow arrow pointer selection of menu items

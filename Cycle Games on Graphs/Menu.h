@@ -10,6 +10,14 @@
 #include "Misc.h"
 
 /*
+* TODO:
+*	- look into using std::filesystem member functions more
+*	- more permission checking to avoid errors
+*	- https://en.cppreference.com/w/cpp/filesystem/relative to compose relative paths instead of concatenating strings
+*	- check for available space before writing?
+*/
+
+/*
 * 
 * Most of the code for the program's menus will be in this header, as
 * the name suggests. This will mostly consist of just printing out choices
@@ -106,6 +114,16 @@ MENU_ENTRY gen_menu_options[] = {
 // Leave commented out if you want files in the project's working directory
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
 //#define ALT_RESULT_PATH		"C:\\Users\\willl\\Desktop\\Results"				// ^
+#if defined(ALT_ADJ_PATH)
+	#pragma message ("Alternate adjacency info file directory supplied: " ALT_ADJ_PATH)
+#else 
+	#pragma message ("Defaulting to the project's working directory for the adjacency information file directory")
+#endif // ALT_ADJ_PATH
+#if defined(ALT_RESULT_PATH)
+	#pragma message ("Alternate results directory supplied: " ALT_RESULT_PATH)
+#else 
+	#pragma message ("Defaulting to the project's working directory for the results file directory")
+#endif // ALT_RESULT_PATH
 
 #define ERRNO_STRING_LEN	1000 // arbitrary max value for Microsoft's error messages, as it appears that strerrorlen_s isn't defined on my machine/ platform
 
@@ -159,7 +177,7 @@ bool verify_adj_info_path(std::filesystem::path* __restrict adj_path, const bool
 	std::filesystem::path adj_path_temp;
 	
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, use it
-	adj_path_temp = std::filesystem::path(ADJ_DIR);
+	adj_path_temp = std::filesystem::path(ALT_ADJ_PATH);
 #else // otherwise we'll do things in the project's current directory
 	adj_path_temp = std::filesystem::current_path();
 	adj_path_temp.append("Adjacency_Information");
@@ -466,7 +484,6 @@ void user_plays(const std::filesystem::path adj_info_path)
 			return;
 		}
 		if (game_select == 0) { // MAC
-		
 			game_result = play_MAC_loud(node_select, num_nodes, adj_info, edge_use, node_use, move_hist, 0, result_stream);
 		}else { // AAC
 			game_result = play_AAC_loud(node_select, num_nodes, adj_info, edge_use, node_use, move_hist, 0, result_stream);

@@ -115,7 +115,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 			continue; // back to the top of the loop
 		} else { // something went wrong, return a NULL pointer to indicate an error
 			DISPLAY_ERR(true,
-				"Error parsing the file searching for the largest node label.\nIf this adjacency information wasn't created on your machine, try re-generating it now.");
+				"Error parsing the file searching for the largest node label.\nIf this adjacency information file wasn't created on your machine, try re-generating it now.");
 			return adj_matrix;
 		}
 	}
@@ -285,13 +285,9 @@ void stacked_prism_gen(FILE* __restrict output, const uint_fast16_t m, const uin
 *	- While it may make sense to switch back to using the template class later, for
 *	now I'll just go with the approach below
 * 
-* - I initially tried to allocate an array of pointers, so that each entry pointed 
-* to another block of memory where each tuple would live, but visual studio wouldn't
-* stop giving me warnings, so I decided to do it with a single dimensional array, where 
-* the tuples are just laid out next to eachother, and it's more reliant on the function
-* using this stored info to know what's what
-*	- this implementation should be more efficient, but maybe a little more confusing at first glance
-*	- might want to actually put these functions into a class to make things a little clearer...something to look into
+* - I decided to do it with a single dimensional array, where the tuples are just 
+* laid out next to eachother, and it's more reliant on the function using this stored 
+* info to know what's what
 * 
 */
 
@@ -414,6 +410,7 @@ void z_mn_group_gen(std::vector<uint_fast16_t>& __restrict member_list, std::vec
 * Returns :
 * - bool : true to indicate success, false to indicate failure
 ****************************************************************************/
+// check if casts are needed here...
 bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_t n)
 {
 	if (output == NULL) {
