@@ -35,5 +35,8 @@
     <ClInclude Include="Misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cycle_Games_Threaded.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

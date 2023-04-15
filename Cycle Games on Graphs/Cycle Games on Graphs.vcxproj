@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="Adjacency_Matrix.h" />
     <ClInclude Include="Cycle_Games.h" />
+    <ClInclude Include="Cycle_Games_Threaded.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="Style Info.h" />
