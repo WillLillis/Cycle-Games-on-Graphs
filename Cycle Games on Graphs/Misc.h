@@ -157,7 +157,7 @@ bool is_number(const std::string input)
 ****************************************************************************/
 void erase_lines(const uint_fast16_t num_lines)
 {
-	if (num_lines > 0) {
+	if (num_lines > 0) [[likely]] {
 		printf("\x1b[2K"); // Delete current line
 
 		for (uint_fast16_t line = 1; line < num_lines; line++) { // line = 1 because we included the first line
@@ -214,7 +214,7 @@ inline size_t index_translation(const uint_fast16_t num_cols, const uint_fast16_
 // in a way that the gcc compiler doesn't flip out on us?
 size_t get_file_length(std::fstream* __restrict file)
 {
-	if (!(*file).is_open()) {
+	if (!(*file).is_open()) [[unlikely]] {
 		DISPLAY_ERR(true, "The supplied file stream is not open.");
 		return 0;
 	}

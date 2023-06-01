@@ -63,7 +63,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	std::fstream data_stream;
 
 	data_stream.open(file_path.string().c_str(), std::fstream::in); // open file with read permissions only
-	if (!data_stream.is_open()) {
+	if (!data_stream.is_open()) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Failed to open the adjacency information file.\nRequested path: %s", file_path.string().c_str());
 	}
@@ -71,7 +71,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	size_t file_length = get_file_length(&data_stream);
 
 	// allocate a buffer with the length to read all of the file's contents in at once
-	if (!(file_length > 0)) {
+	if (!(file_length > 0)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Received an invalid file length.\nRequested path: %s", file_path.string().c_str());
 		return adj_matrix;
@@ -93,7 +93,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	if (data_start > 0) {
 		data_start++; // increment one more time to get past that first newline character
 	}
-	else { // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
+	else [[unlikely]] { // otherwise there was no file heading, indicating some sort of error with the file/ how we read it, return an error
 		DISPLAY_ERR(true,
 			"File parsing error. Adjacency type header not found. File path: %s", file_path.string().c_str());
 		return adj_matrix;
@@ -106,14 +106,16 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 			"File parsing error. End of file read into memory unexpectedly reached. File path: %s", file_path.string().c_str());
 		return adj_matrix;
 	}
+	// BUGBUG add dos2unix functionality to "repair" files right here?
+		// https://stackoverflow.com/questions/58279627/reimplementing-dos2unix-and-unix2dos-in-c-r-and-n-not-appearing-in-hexd 
 	// loop to find the max label in the adjacency listing file
 	while (curr < file_length) {
-		if (std::isdigit(data[curr])) {
+		if (std::isdigit(data[curr])) [[likely]] {
 			temp_label = std::atoi(&data[curr]);
 			max_label = std::max(temp_label, max_label);
 			curr += num_digits(temp_label) + 1; // advance to the next character, and then one more to skip a comma/ newline character
 			continue; // back to the top of the loop
-		} else { // something went wrong, return a NULL pointer to indicate an error
+		} else [[unlikely]] { // something went wrong, return a NULL pointer to indicate an error
 			DISPLAY_ERR(true,
 				"Error parsing the file searching for the largest node label.\nIf this adjacency information file wasn't created on your machine, try re-generating it now.");
 			return adj_matrix;
@@ -130,14 +132,14 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	bool second_node = false; // to track which node (first or second on a given line) we're on
 
 	curr = data_start;
-	if (!(curr < file_length)) {
+	if (!(curr < file_length)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Issue parsing the adjacency information file loaded into memory.\nReached the end of the file earlier than expected.\nFile path: %s",
 			file_path.string().c_str());
 		return adj_matrix;
 	}
 	while (curr < file_length) {
-		if (std::isdigit(data[curr])) {
+		if (std::isdigit(data[curr])) [[likely]] {
 			if (!second_node) { // reading in the first digit in a pair
 				node_1 = std::atoi(&data[curr]);
 				curr += num_digits(node_1); // advance to the first char past that of the number's
@@ -171,7 +173,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 				continue;
 			}
 		}
-		else { // something went wrong, return the empty vector but don't set the success_out flag
+		else [[unlikely]] { // something went wrong, return the empty vector but don't set the success_out flag
 			DISPLAY_ERR(true,
 				"Issue parsing the adjacency information file loaded into memory.\nUnspecified parsing error.\nFile path: %s",
 				file_path.string().c_str());
@@ -208,7 +210,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 ****************************************************************************/
 void generalized_petersen_gen(FILE* __restrict output, const uint_fast16_t n, const uint_fast16_t k)
 {
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
@@ -250,7 +252,7 @@ void generalized_petersen_gen(FILE* __restrict output, const uint_fast16_t n, co
 ****************************************************************************/
 void stacked_prism_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_t n)
 {
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true, "Invalid file stream.");
 		return;
 	}
@@ -413,7 +415,7 @@ void z_mn_group_gen(std::vector<uint_fast16_t>& __restrict member_list, std::vec
 // check if casts are needed here...
 bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_t n)
 {
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true, "Invalid file stream.");
 		return false;
 	}
@@ -425,7 +427,7 @@ bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_
 	bool has_entry = false;
 	
 	// common sense checks here to make sure vector allocated all of the memory...
-	if (num_tuples == 0 || (member_list.size() != ((size_t)num_tuples * (size_t)n))) {
+	if (num_tuples == 0 || (member_list.size() != ((size_t)num_tuples * (size_t)n))) [[unlikely]] {
 		DISPLAY_ERR(true, 
 			"Failed to allocate the necessary memory to generate the adjacency listing! Attempted to allocatte %zu bytes.", (size_t)(std::pow(m,n) * n));
 		return false;

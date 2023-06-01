@@ -185,7 +185,7 @@ bool verify_adj_info_path(std::filesystem::path* __restrict adj_path, const bool
 
 	std::filesystem::directory_entry adj_dir(adj_path_temp);
 
-	if (!adj_dir.exists()) { // if we can't find the directory....
+	if (!adj_dir.exists()) [[unlikely]] { // if we can't find the directory....
 #ifdef ALT_ADJ_PATH // if the user supplied their own directory for the adjacency files, tell them there's something wrong with it
 		DISPLAY_ERR(true,
 			"Unable to find the \"Adjacency_Information\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\nRequested path: %s", ALT_ADJ_PATH);
@@ -258,7 +258,7 @@ bool verify_results_path(std::filesystem::path* __restrict result_path, const bo
 
 	std::filesystem::directory_entry result_dir(result_path_temp);
 
-	if (!result_dir.exists()) { // if we can't find the directory...
+	if (!result_dir.exists()) [[unlikely]] { // if we can't find the directory...
 #ifdef ALT_RESULT_PATH // if the user supplied their own directory for their results, tell them there's something wrong with it
 		DISPLAY_ERR(true,
 			"Unable to find the \"Results\" directory.\nThe alternate path identifier is defined, make sure you supplied a valid path.\n Requested path: %s", result_path_temp.string().c_str());
@@ -333,7 +333,7 @@ std::string get_result_file_name(const std::filesystem::path adj_info_path,
 // want to change [BACK] options to go back a step in param selection, instead of back to the file selection page?
 void user_plays(const std::filesystem::path adj_info_path)
 {
-	if (!std::filesystem::directory_entry(adj_info_path).exists()) {
+	if (!std::filesystem::directory_entry(adj_info_path).exists()) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Supplied adjacency info file was not found/does not exist\nRequested path: %s", adj_info_path.string().c_str());
 		return;
@@ -342,12 +342,12 @@ void user_plays(const std::filesystem::path adj_info_path)
 	uint_fast16_t num_nodes = 0; 
 	bool load_success = false;
 	std::vector<uint_fast16_t> adj_info = load_adjacency_info(adj_info_path, &num_nodes, &load_success); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
-	if (load_success == false) {
+	if (load_success == false) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"An error occurred while attempting to load adjacency information");
 		return;
 	}
-	if (!(num_nodes > 0)) {
+	if (!(num_nodes > 0)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Recieved invalid graph parameter (number of graphs nodes) after attempting to load adjacency information. Value: %hu", (uint16_t)num_nodes);
 		return;
@@ -408,7 +408,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 	// if the user asked for a loud run, make sure the results directory is all set up
 	std::filesystem::path result_path;
 	if (output_select == 1) {
-		if (!verify_results_path(&result_path, false)) {
+		if (!verify_results_path(&result_path, false)) [[unlikely]] {
 			DISPLAY_ERR(true,
 				"Failed to find and/ or create the \"Results\" sub-directory to store the results of the loud run.");
 			return;
@@ -430,7 +430,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 		std::cin >> node_select_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-		if (!is_number(node_select_raw)) {
+		if (!is_number(node_select_raw)) [[unlikely]] {
 			continue;
 		}
 		node_select = std::stoul(node_select_raw, NULL);
@@ -489,9 +489,9 @@ void user_plays(const std::filesystem::path adj_info_path)
 			game_result = play_AAC_loud(node_select, num_nodes, adj_info, edge_use, node_use, move_hist, 0, result_stream);
 		}
 
-		if (result_stream != NULL) { // if result_stream is NULL, then we don't need to close it?
+		if (result_stream != NULL) [[likely]] { // if result_stream is NULL, then we don't need to close it
 			int close_err = fclose(result_stream);
-			if (close_err != 0) {
+			if (close_err != 0) [[unlikely]] {
 				DISPLAY_ERR(false,
 					"Failed to properly close the output file.\nPath associated with file stream: %s", result_path.string().c_str());
 			}
@@ -619,9 +619,10 @@ void play_menu()
 	clear_screen();
 	std::filesystem::path adj_path;
 
-	if (!verify_adj_info_path(&adj_path, true)) { // make sure the adjacency info directory is there
+	if (!verify_adj_info_path(&adj_path, true)) [[unlikely]] { // make sure the adjacency info directory is there
 		DISPLAY_ERR(true,
 			"Issues with/ couldn't find the \"Adjacency_Information\" directory.\nReturned path: %s", adj_path.string().c_str());
+		return;
 	}
 
 	play_menu_subdir(adj_path); // and if so then start browsing
@@ -652,7 +653,7 @@ void play_menu()
 // safer way to do va_args than the C way?
 std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fast32_t num_args, ...)
 {
-	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS)) {
+	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Invalid graph family parameter supplied to generate the file name.");
 		return "";
@@ -751,7 +752,7 @@ void user_generalized_petersen_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_MENU_GEN_PET_ENTRY)) {
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_GEN_PET_ENTRY)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
@@ -770,14 +771,14 @@ void user_generalized_petersen_gen()
 #endif // WIN32
 
 #ifdef _WIN32
-	if (err != 0) {
+	if (err != 0) [[unlikely]] {
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", 
 			output_path.string().c_str(), err_buff);
 #else
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
 #endif // WIN32
@@ -785,9 +786,9 @@ void user_generalized_petersen_gen()
 	}
 
 	generalized_petersen_gen(output, n_param, k_param); // call the actual generation function
-	if (output != NULL) {
+	if (output != NULL) [[likely]] {
 		int close_err = fclose(output);
-		if (close_err != 0) {
+		if (close_err != 0) [[unlikely]] {
 			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
@@ -868,7 +869,7 @@ void user_stacked_prism_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_MENU_STACKED_PRISM_ENTRY)) {
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_STACKED_PRISM_ENTRY)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
@@ -885,13 +886,13 @@ void user_stacked_prism_gen()
 #endif // WIN32
 	
 #ifdef _WIN32
-	if (err != 0) { // Will need to tweak error reporting once we get the generated graphs in the correct directory
+	if (err != 0) [[unlikely]] { // Will need to tweak error reporting once we get the generated graphs in the correct directory
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
-	if(output == NULL) {
+	if(output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error code: %d", output_path.string().c_str());
 #endif // _WIN32
@@ -900,9 +901,9 @@ void user_stacked_prism_gen()
 
 	stacked_prism_gen(output, m_param, n_param); // call the actual generation function
 
-	if (output != NULL) {
+	if (output != NULL) [[likely]] {
 		int close_err = fclose(output);
-		if (close_err != 0) {
+		if (close_err != 0) [[unlikely]] {
 			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
@@ -983,7 +984,7 @@ void user_z_mn_gen()
 	FILE* output;
 
 	std::filesystem::path output_path;
-	if (!verify_adj_info_path(&output_path, false, GEN_MENU_Z_MN_ENTRY)) {
+	if (!verify_adj_info_path(&output_path, false, GEN_MENU_Z_MN_ENTRY)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Issue found when checking the adjacency information path.");
 		return;
@@ -1001,14 +1002,14 @@ void user_z_mn_gen()
 #endif // WIN32
 
 #ifdef _WIN32
-	if (err != 0) {
+	if (err != 0) [[unlikely]] {
 		//strerrorlen_s(err); // looks like this isn't defined on my machine :(
 		char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 		strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", output_path.string().c_str(), err_buff);
 #else
-	if(output == NULL) {
+	if(output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Failed to open the result output file.\nRequested path: %s", output_path.string().c_str());
 #endif // _WIN32
@@ -1017,9 +1018,9 @@ void user_z_mn_gen()
 
 	bool success = z_mn_gen(output, m_param, n_param); // call the actual generation function
 	
-	if (output != NULL) {
+	if (output != NULL) [[likely]] {
 		int close_err = fclose(output);
-		if (close_err != 0) {
+		if (close_err != 0) [[unlikely]] {
 			DISPLAY_ERR(true,
 				"Failed to properly close the output file.\nPath associated with file stream: %s", 
 				output_path.string().c_str());
@@ -1027,7 +1028,7 @@ void user_z_mn_gen()
 		}
 	}
 
-	if (!success) {
+	if (!success) [[unlikely]] {
 		DISPLAY_ERR(false, "Failed to generate adjacency matrix! Returning...");
 		return;
 	}

@@ -82,7 +82,7 @@ typedef uint_fast8_t PLAYER_SIDE;
 // move to Misc.h?
 void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 {
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"The supplied file stream is invalid. Nothing will be written.");
 		return;
@@ -91,54 +91,6 @@ void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 	std::string indent_str(num_indent, '\t');
 	fprintf(output, "%s", indent_str.c_str());
 }
-
-/****************************************************************************
-* fprint_indent2
-*
-* - prints the specified number of tabs to the specified file stream
-* - used as indents to indicate the level of recursion in the output files
-* of loud runs
-*
-* Parameters :
-* - output : the file stream to print the tabs to
-* - num_indent : the number of tabs to print
-*
-* Returns :
-* - none
-****************************************************************************/
-// move to Misc.h?
-// trade off of cost from allocation vs. repeated calls to fprintf...will have to do some benchmarking
-//void fprint_indent2(FILE* __restrict output, const uint_fast16_t num_indent)
-//{
-//	if (output == NULL) {
-//		DISPLAY_ERR(true,
-//			"The supplied file stream is invalid. Nothing will be written.");
-//		return;
-//	}
-//	uint_fast16_t arb_thresh = 0;
-//	if (num_indent <= arb_thresh) {
-//		char buff[500 + 1] = {'\t'}; // some constant buffer size known at compile time, maybe make it a #define for transparency
-//		buff[num_indent] = '\0';
-//		fprintf(output, buff);
-//	} else {
-//		char* buff = (char*)malloc(num_indent + 1);
-//		if (buff == NULL) { // if we failed to allocate just complete the writes the slow way...
-//			for (uint_fast16_t i = 0; i < num_indent; i++) {
-//				fprintf(output, "\t");
-//			}
-//		}
-//		else {
-//			memset(buff, (char)'\t', num_indent);
-//			buff[num_indent] = '\0';
-//			fprintf(output, buff);
-//			free(buff);
-//		}
-//	}
-//	// basic approach
-//	for (uint_fast16_t i = 0; i < num_indent; i++) {
-//		fprintf(output, "\t");
-//	}
-//}
 
 /****************************************************************************
 * progress_log
@@ -161,7 +113,7 @@ void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 ****************************************************************************/
 void progress_log(FILE* __restrict output, const uint_fast16_t num_indent, const char* format, ...)
 {
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true, "The supplied file stream is invalid. Nothing will be written.");
 		return;
 	}
@@ -193,7 +145,7 @@ void progress_log(FILE* __restrict output, const uint_fast16_t num_indent, const
 ****************************************************************************/
 void fprint_move_hist(FILE* __restrict output, const uint_fast16_t recur_depth, std::vector<uint_fast16_t>& __restrict move_hist)
 {
-	if (output == NULL) {
+	if (output == NULL) [[unlikely]] {
 		DISPLAY_ERR(true, "The supplied file stream is invalid. Nothing will be written.");
 		return;
 	}
