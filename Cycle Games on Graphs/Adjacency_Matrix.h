@@ -475,9 +475,7 @@ bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_
 					fprintf(output, "%c%hu,%hu", ADJ_FILE_DELIM, (uint16_t)i, (uint16_t)j);
 				} else {
 					fprintf(output, "%hu,%hu", (uint16_t)i, (uint16_t)j);
-
 				}
-				
 				has_entry = true;
 			}
 		}

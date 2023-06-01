@@ -471,13 +471,13 @@ void user_plays(const std::filesystem::path adj_info_path)
 #endif // _WIN32
 
 #ifdef _WIN32
-		if (err != 0) {
+		if (err != 0) [[unlikely]] {
 			char err_buff[ERRNO_STRING_LEN]; // (https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strerror-s-strerror-s-wcserror-s-wcserror-s?view=msvc-170)
 			strerror_s(err_buff, ERRNO_STRING_LEN, NULL);
 			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s\nfopen_s error message: %s", result_path.string().c_str(), err_buff);
 #else
-		if (result_stream == NULL) {
+		if (result_stream == NULL) [[unlikely]] {
 			DISPLAY_ERR(true,
 				"Failed to open the result output file.\nRequested path: %s", result_path.string().c_str());
 #endif // _WIN32
@@ -521,7 +521,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 ****************************************************************************/
 void play_menu_subdir(const std::filesystem::path curr_dir)
 {
-	if (!std::filesystem::directory_entry(curr_dir).exists()) {
+	if (!std::filesystem::directory_entry(curr_dir).exists()) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"Failed to find the specified subdirectory.\nRequested path: %s", curr_dir.string().c_str());
 		return;
@@ -535,7 +535,7 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 
 	while (true) {
 		clear_screen();
-		// is having the full path helpful?
+		// is having the full path displayed helpful?
 		printf("%s\n", curr_dir.string().c_str()); // print the current directory so the user knows where they are
 		printf("Select a [FILE] to play on, or a [DIR] to open.\n");
 		entry_index = 0;
@@ -549,7 +549,7 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 				entry_index++;
 			}
 		}
-		if (entry_index == 0) {
+		if (entry_index == 0) [[unlikely]] {
 			printf("<No valid entries>\n");
 		}
 		printf("[%03hu][BACK]\n", (uint16_t)entry_index);
@@ -577,6 +577,7 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 		// reading through the C++ documentation, I didn't find a way to directly access a member of the directory
 		// using the std::filesystem functions-> guess we'll just iterate through until we get to the right one
 			// there has to be a better way to do this, right?
+			// could append all the dir entries to a std::vector and grab from that...
 		entry_index = 0;
 		temp_path = curr_dir;
 		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) { // starts in cwd
@@ -660,7 +661,7 @@ std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fas
 	}
 
 	std::string file_name = gen_menu_options[graph_fam].internal_name; // false positive warning pops up here
-	if (num_args == 0) { // no graph parameters
+	if (num_args == 0) [[unlikely]] { // no graph parameters
 	
 		file_name.append(".txt");
 		return file_name;
@@ -698,6 +699,9 @@ std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fas
 // If a subfolder of the correct name doesn't exist, just stick it in the directory-> leave it up to the user where they want their files
 // If a subfolder of the correct name does exist, put it in there->organization done for those who don't care
 	// do we want to add option to play immediately on a file we just generated?->talk with Gates/ Kelvey
+
+// Might want to re-organize here, a lot of redundant code
+	// maybe create separate parameter checking functions for each graph family...
 
 /****************************************************************************
 * user_generalized_petersen_gen
@@ -799,13 +803,19 @@ void user_generalized_petersen_gen()
 	// allow user to play game on newly generated adjacency file
 	std::string exit_choice_raw;
 	uint_fast16_t exit_choice = 2;
+	bool bad_input = false;
 	do {
-		printf("Generation completed.\n");
-		printf("[0] Continue\n");
-		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		if (!bad_input) {
+			printf("Generation completed.\n");
+			printf("[0] Continue\n");
+			printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		} else {
+			erase_lines(2);
+		}
 		std::cin >> exit_choice_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		bad_input = true;
 		if (!is_number(exit_choice_raw)) {
 			continue;
 		}
@@ -914,13 +924,19 @@ void user_stacked_prism_gen()
 	// allow user to play game on newly generated adjacency file
 	std::string exit_choice_raw;
 	uint_fast16_t exit_choice = 2;
+	bool bad_input = false;
 	do {
-		printf("Generation completed.\n");
-		printf("[0] Continue\n");
-		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		if (!bad_input) {
+			printf("Generation completed.\n");
+			printf("[0] Continue\n");
+			printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		} else {
+			erase_lines(2);
+		}
 		std::cin >> exit_choice_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		bad_input = true;
 		if (!is_number(exit_choice_raw)) {
 			continue;
 		}
@@ -1036,13 +1052,19 @@ void user_z_mn_gen()
 	// allow user to play game on newly generated adjacency file
 	std::string exit_choice_raw;
 	uint_fast16_t exit_choice = 2;
+	bool bad_input = false;
 	do {
-		printf("Generation completed.\n");
-		printf("[0] Continue\n");
-		printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		if (!bad_input) {
+			printf("Generation completed.\n");
+			printf("[0] Continue\n");
+			printf("[1] Play a game on %s\n", output_path.stem().string().c_str());
+		} else {
+			erase_lines(2);
+		}
 		std::cin >> exit_choice_raw;
 		std::cin.clear();
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		bad_input = true;
 		if (!is_number(exit_choice_raw)) {
 			continue;
 		}
