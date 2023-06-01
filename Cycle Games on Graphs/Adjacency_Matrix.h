@@ -35,6 +35,29 @@ typedef uint_fast16_t Adjacency_Info;
 #define ADJACENT		1
 #define NOT_ADJACENT	0
 
+// https://stackoverflow.com/questions/58279627/reimplementing-dos2unix-and-unix2dos-in-c-r-and-n-not-appearing-in-hexd
+std::filesystem::path dos2unix_repair(const std::filesystem::path file_path)
+{
+	char c;
+	std::ifstream is(file_path.c_str());
+
+	std::filesystem::path repair_file_path = file_path;
+	repair_file_path.replace_extension("");
+	repair_file_path.replace_filename(repair_file_path.filename().string() + "_repaired");
+	repair_file_path.replace_extension(".txt");
+	std::ofstream os(repair_file_path.c_str());
+
+	while (is.get(c)) {
+		if (c != '\r') [[likely]] {
+			os.put(c);
+		}	
+	}
+
+	is.close();
+	os.close();
+	return repair_file_path;
+}
+
 /****************************************************************************
 * load_adjacency_info
 *
@@ -56,7 +79,7 @@ typedef uint_fast16_t Adjacency_Info;
 ****************************************************************************/
 // Need to add ability to read in adjacency matrices?
 std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_path, 
-	uint_fast16_t* __restrict num_nodes_out, bool* __restrict success_out)
+	uint_fast16_t* __restrict num_nodes_out, bool* __restrict success_out, bool try_repair = true)
 {
 	*success_out = false;
 	std::vector<uint_fast16_t> adj_matrix;
@@ -101,7 +124,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 
 	size_t curr = data_start;
 	
-	if(!(curr < file_length)) {
+	if(!(curr < file_length)) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"File parsing error. End of file read into memory unexpectedly reached. File path: %s", file_path.string().c_str());
 		return adj_matrix;
@@ -115,9 +138,17 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 			max_label = std::max(temp_label, max_label);
 			curr += num_digits(temp_label) + 1; // advance to the next character, and then one more to skip a comma/ newline character
 			continue; // back to the top of the loop
-		} else [[unlikely]] { // something went wrong, return a NULL pointer to indicate an error
-			DISPLAY_ERR(true,
-				"Error parsing the file searching for the largest node label.\nIf this adjacency information file wasn't created on your machine, try re-generating it now.");
+		} else [[unlikely]] { // something went wrong
+			if (try_repair == true) [[likely]] {
+				DISPLAY_ERR(false,
+					"Error parsing the file searching for the largest node label...Attempting to create a compatible version of the file now.");
+				std::filesystem::path repaired_path = dos2unix_repair(file_path); // if it's a line ending issue, we can try to fix it
+				adj_matrix = load_adjacency_info(repaired_path, num_nodes_out, success_out, try_repair = false);
+				return adj_matrix;
+			} else [[unlikely]] {
+				DISPLAY_ERR(true,
+					"Error parsing the file searching for the largest node label...Non-recoverable. Try regenerating the file.");
+			}
 			return adj_matrix;
 		}
 	}
