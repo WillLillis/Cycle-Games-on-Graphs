@@ -88,9 +88,8 @@ void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 		return;
 	}
 
-	for (uint_fast16_t i = 0; i < num_indent; i++) {
-		fprintf(output, "\t");
-	}
+	std::string indent_str(num_indent, '\t');
+	fprintf(output, "%s", indent_str.c_str());
 }
 
 /****************************************************************************
