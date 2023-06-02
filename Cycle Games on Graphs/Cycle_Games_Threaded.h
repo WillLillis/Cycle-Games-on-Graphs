@@ -30,17 +30,17 @@
 * Returns :
 * - GAME_STATE : indication of whether the game is in a WIN_STATE or LOSS_STATE
 ****************************************************************************/
-GAME_STATE play_MAC_threaded(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const std::vector<uint_fast16_t>& __restrict adj_matrix,
-	std::vector<uint_fast16_t>& __restrict edge_use_matrix, std::vector<uint_fast16_t>& __restrict node_use_list)
+GAME_STATE play_MAC_threaded(const uint_fast16_t curr_node, const uint_fast16_t num_nodes, const std::vector<Adjacency_Info>& __restrict adj_matrix,
+	std::vector<EDGE_STATE>& __restrict edge_use_matrix, std::vector<NODE_STATE>& __restrict node_use_list)
 {
 	uint_fast16_t open_edges = 0; // stores the number of available edges we can move along from curr_node
 	GAME_STATE move_result; // temporarily store the result of a recursive call here
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++) {
-		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == ADJACENT // if curr_node and curr_neighbor are adjacent
-			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) { // and the edge between them is unused
+		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == Adjacency_Info::ADJACENT // if curr_node and curr_neighbor are adjacent
+			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == EDGE_STATE::NOT_USED) { // and the edge between them is unused
 			open_edges++;
-			if (node_use_list[curr_neighbor] == USED) { // if the neighbor has been previously visited, going back creates a cycle!
+			if (node_use_list[curr_neighbor] == NODE_STATE::USED) { // if the neighbor has been previously visited, going back creates a cycle!
 				return GAME_STATE::WIN_STATE;
 			}
 		}
@@ -51,17 +51,15 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t curr_node, const uint_fast16_t 
 	}
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++) {
-		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == ADJACENT // if curr_node and curr_neighbor are adjacent
-			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) { // and the edge between them is unused
+		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == Adjacency_Info::ADJACENT // if curr_node and curr_neighbor are adjacent
+			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == EDGE_STATE::NOT_USED) { // and the edge between them is unused
 			// try making the move along that edge
-			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = USED;
-			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = USED; // have to mark both entries
-			node_use_list[curr_neighbor] = USED;
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::USED);
+			node_use_list[curr_neighbor] = NODE_STATE::USED;
 			move_result = play_MAC_quiet(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list);
 			// reset the move after returning
-			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
-			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries
-			node_use_list[curr_neighbor] = NOT_USED;
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::NOT_USED);
+			node_use_list[curr_neighbor] = NODE_STATE::NOT_USED;
 			if (move_result == GAME_STATE::LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 				return GAME_STATE::WIN_STATE;
 			}

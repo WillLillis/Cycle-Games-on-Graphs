@@ -340,7 +340,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 
 	uint_fast16_t num_nodes = 0; 
 	bool load_success = false;
-	std::vector<uint_fast16_t> adj_info = load_adjacency_info(adj_info_path, &num_nodes, &load_success); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
+	std::vector<Adjacency_Info> adj_info = load_adjacency_info(adj_info_path, &num_nodes, &load_success); // call returns pointer to the adjacency matrix, and sets the value of num_nodes
 	if (load_success == false) [[unlikely]] {
 		DISPLAY_ERR(true,
 			"An error occurred while attempting to load adjacency information");
@@ -439,11 +439,11 @@ void user_plays(const std::filesystem::path adj_info_path)
 	} while (!(node_select >= 0 && node_select < num_nodes));
 
 	// Now that all of the options have been specified, it's time to set up to actually play the game as requested
-	std::vector<uint_fast16_t> edge_use(num_nodes * num_nodes, NOT_USED);
-	std::vector<uint_fast16_t> node_use(num_nodes, NOT_USED);
+	std::vector<EDGE_STATE> edge_use(num_nodes * num_nodes, EDGE_STATE::NOT_USED);
+	std::vector<NODE_STATE> node_use(num_nodes, NODE_STATE::NOT_USED);
 
 	// Have to mark the starting node as used!
-	node_use[node_select] = USED;
+	node_use[node_select] = NODE_STATE::USED;
 
 	GAME_STATE game_result;
 	if (output_select == 0) { // Quiet 

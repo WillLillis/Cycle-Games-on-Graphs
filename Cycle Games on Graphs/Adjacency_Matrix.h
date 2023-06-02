@@ -31,13 +31,13 @@
 #define MAX_ELEMENTS	500 // arbitrary max value, feel free to increase if needed
 
 // Used within Cycle_Games.h, but made sense categorically to #define these in here
-typedef uint_fast16_t Adjacency_Info;
-#define ADJACENT		1
-#define NOT_ADJACENT	0
-//enum class Adjacency_Info {
-//	ADJACENT,
-//	NOT_ADJACENT
-//};
+//typedef uint_fast16_t Adjacency_Info;
+//#define ADJACENT		1
+//#define NOT_ADJACENT	0
+enum class Adjacency_Info : uint_fast16_t {
+	ADJACENT,
+	NOT_ADJACENT
+};
 
 /****************************************************************************
 * dos2unix_repair
@@ -102,11 +102,11 @@ std::filesystem::path dos2unix_repair(const std::filesystem::path file_path)
 * (*num_nodes_out) * (*num_nodes_out) holding the adjacency matrix
 ****************************************************************************/
 // Need to add ability to read in adjacency matrices?
-std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_path, 
+std::vector<Adjacency_Info> load_adjacency_info(const std::filesystem::path file_path,
 	uint_fast16_t* __restrict num_nodes_out, bool* __restrict success_out, bool try_repair = true)
 {
 	*success_out = false;
-	std::vector<uint_fast16_t> adj_matrix;
+	std::vector<Adjacency_Info> adj_matrix;
 	std::fstream data_stream;
 
 	data_stream.open(file_path.string().c_str(), std::fstream::in); // open file with read permissions only
@@ -179,7 +179,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 	*num_nodes_out = max_label;
 
 	// now that we have the max label, we know the size of the adjacency matrix
-	adj_matrix.assign((size_t)max_label * (size_t)max_label, NOT_ADJACENT);
+	adj_matrix.assign((size_t)max_label * (size_t)max_label, Adjacency_Info::NOT_ADJACENT);
 
 	uint_fast16_t node_1, node_2; // to temporarily store node values read in from the data block
 	bool second_node = false; // to track which node (first or second on a given line) we're on
@@ -220,8 +220,8 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 					}
 				}
 				curr++; // advance one more character to skip the newline char
-				adj_matrix[index_translation(max_label, node_1, node_2)] = ADJACENT; // mark the appropriate entries in the adjacency matrix
-				adj_matrix[index_translation(max_label, node_2, node_1)] = ADJACENT; // ^
+				adj_matrix[index_translation(max_label, node_1, node_2)] = Adjacency_Info::ADJACENT; // mark the appropriate entries in the adjacency matrix
+				adj_matrix[index_translation(max_label, node_2, node_1)] = Adjacency_Info::ADJACENT; // ^
 				second_node = false;
 				continue;
 			}
