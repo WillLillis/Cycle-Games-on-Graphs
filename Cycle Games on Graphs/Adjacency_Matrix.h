@@ -35,7 +35,21 @@ typedef uint_fast16_t Adjacency_Info;
 #define ADJACENT		1
 #define NOT_ADJACENT	0
 
-// https://stackoverflow.com/questions/58279627/reimplementing-dos2unix-and-unix2dos-in-c-r-and-n-not-appearing-in-hexd
+/****************************************************************************
+* dos2unix_repair
+*
+* - Opens the specified file containing an adjacency listing, then creates a
+* copy of it without carriage returns ('\r') so the non-Windows world can use
+* the file
+* - Takes the existing file name and appends "_repaired" to it for the copy's name
+* - Shamelessly taken from https://stackoverflow.com/questions/58279627/reimplementing-dos2unix-and-unix2dos-in-c-r-and-n-not-appearing-in-hexd
+*
+* Parameters :
+* - file_path : std::filesystem::path object holding the path for the desired file
+*
+* Returns :
+* - std::filesystem::path : path to the repaired copy of the file
+****************************************************************************/
 std::filesystem::path dos2unix_repair(const std::filesystem::path file_path)
 {
 	char c;
@@ -47,7 +61,7 @@ std::filesystem::path dos2unix_repair(const std::filesystem::path file_path)
 	repair_file_path.replace_extension(".txt");
 	std::ofstream os(repair_file_path.c_str());
 
-	while (is.get(c)) {
+	while (is.get(c)) { 
 		if (c != '\r') [[likely]] {
 			os.put(c);
 		}	
@@ -72,6 +86,12 @@ std::filesystem::path dos2unix_repair(const std::filesystem::path file_path)
 * - file_path : string holding the path to the desired file
 * - num_nodes_out : passed in by reference in order to tell the caller how
 * many nodes the given graph has
+* - success_out : pointer to a bool indicating whether an adjacency matrix was 
+* successfully generated to the caller
+* - try_repair : bool indicating whether the function should try creating a 
+* "repaired" version of the adjacency info file if certain error conditions are
+* met. Default value is true, but should be set to false for subsequent calls to 
+* prevent infinite recursion
 *
 * Returns :
 * - uint_fast16_t* : pointer to a buffer of size 
@@ -129,8 +149,7 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 			"File parsing error. End of file read into memory unexpectedly reached. File path: %s", file_path.string().c_str());
 		return adj_matrix;
 	}
-	// BUGBUG add dos2unix functionality to "repair" files right here?
-		// https://stackoverflow.com/questions/58279627/reimplementing-dos2unix-and-unix2dos-in-c-r-and-n-not-appearing-in-hexd 
+
 	// loop to find the max label in the adjacency listing file
 	while (curr < file_length) {
 		if (std::isdigit(data[curr])) [[likely]] {
@@ -144,7 +163,6 @@ std::vector<uint_fast16_t> load_adjacency_info(const std::filesystem::path file_
 					"Error parsing the file searching for the largest node label...Attempting to create a compatible version of the file now.");
 				std::filesystem::path repaired_path = dos2unix_repair(file_path); // if it's a line ending issue, we can try to fix it
 				adj_matrix = load_adjacency_info(repaired_path, num_nodes_out, success_out, try_repair = false);
-				return adj_matrix;
 			} else [[unlikely]] {
 				DISPLAY_ERR(true,
 					"Error parsing the file searching for the largest node label...Non-recoverable. Try regenerating the file.");

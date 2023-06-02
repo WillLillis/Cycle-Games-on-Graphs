@@ -8,8 +8,7 @@
 * pass on this project, and then cleaning it up
 * 
 * - We could make this an object oriented project with a bunch of classes and whatnot, 
-* but that's not something I'm not super comfortable with, and also seems like it would 
-* be an additional hurdle to future research interns looking to contribute to the code base
+* but that's not something I'm not super comfortable with, so I'll hold off for now
 * 
 * As a result of this (potentially misguided) decision, the code is going to rewritten 
 * in a loose style that doesn't focus on object oriented things like classes, and hopefully that's ok
@@ -43,7 +42,7 @@ typedef int_fast16_t GAME_STATE;
 // maybe replace?
 //enum class GAME_STATE1 : int_fast16_t
 //{
-//	WIN_STATE1,
+//	WIN_STATE,
 //
 //
 //};
@@ -64,6 +63,12 @@ typedef uint_fast8_t PLAYER_SIDE;
 */
 #define USED		1
 #define NOT_USED	0
+
+// might also want to transition index_translation() over to a macro, although nested macros are considered to be bad practice so maybe not...
+// need to do some benchmarking to make sure this doesn't hurt performance...would definitely be more readable...
+// this should probably go in Adjacency_Matrix.h
+#define MARK_EDGE(arr, num_nodes, node_1, node_2, edge_val) do { arr[index_translation(num_nodes, node_1, node_2)] = edge_val;\
+															arr[index_translation(num_nodes, node_2, node_1)] = edge_val; } while(false)
 
 /****************************************************************************
 * fprint_indent
@@ -211,9 +216,6 @@ GAME_STATE play_MAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 			if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 				return WIN_STATE;
 			}
-			if (move_result == ERROR_STATE) {
-				return ERROR_STATE;
-			}
 		}
 	}
 
@@ -303,9 +305,6 @@ GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 			if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 				return WIN_STATE;
 			}
-			if (move_result == ERROR_STATE) {
-				return ERROR_STATE;
-			}
 		}
 	}
 
@@ -355,9 +354,6 @@ GAME_STATE play_AAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 				node_use_list[curr_neighbor] = NOT_USED;
 				if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 					return WIN_STATE;
-				}
-				if (move_result == ERROR_STATE) {
-					return ERROR_STATE;
 				}
 			}
 		}
@@ -418,9 +414,6 @@ GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 				fprintf(output, "->%hu\n", (uint16_t)curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
 				if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 					return WIN_STATE;
-				}
-				if (move_result == ERROR_STATE) {
-					return ERROR_STATE;
 				}
 			}
 		}

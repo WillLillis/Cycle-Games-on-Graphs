@@ -2,9 +2,7 @@
 //#include "Cycle_Games_Threaded.h"
 
 int main()
-{	
-	//printf("Test: %zu\n", num_digits((int)3));
-
+{
 	main_menu();
 
 	return 0;
