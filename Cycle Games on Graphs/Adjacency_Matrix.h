@@ -34,6 +34,10 @@
 typedef uint_fast16_t Adjacency_Info;
 #define ADJACENT		1
 #define NOT_ADJACENT	0
+//enum class Adjacency_Info {
+//	ADJACENT,
+//	NOT_ADJACENT
+//};
 
 /****************************************************************************
 * dos2unix_repair

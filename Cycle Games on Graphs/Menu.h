@@ -67,13 +67,6 @@ void generate_menu();
 // have definitions, even though they're clearly defined farther down in the file
 // the code still compiles and runs, but I'd really like to know how to fix this
 
-typedef struct GRAPH_GEN_INFO {
-	std::string graph_name{};
-	std::string graph_file_name{};
-	void (*gen_func)() = NULL;
-	//void (*gen_func)(FILE*, uint_fast16_t, uint_fast16_t); // old way, where generating functions were called directly
-}GRAPH_GEN_INFO;
-
 // If we want to generalize the above idea for all menu choices, we'd just have to create an instance of the below struct
 // for all the menus (besides the ones that vomit out file/ directory lists...), should be relatively straightforward
 typedef struct MENU_ENTRY {
@@ -83,21 +76,18 @@ typedef struct MENU_ENTRY {
 }MENU_ENTRY;
 
 // menu options for main_menu() function
+#if defined(__clang__)
+// clang-format off
+#endif // __clang__
+constexpr auto MAIN_MENU_OPTS_START_LINE = __LINE__;
 MENU_ENTRY main_menu_options[] = {
 	MENU_ENTRY{"Play a game", "", play_menu},
 	MENU_ENTRY{"Generate an adjacency listing", "", generate_menu}
 };
-
-#define NUM_MAIN_MENU_OPTIONS	2
-#define MAIN_MENU_PLAY_ENTRY	0
-#define MAIN_MENU_GEN_ENTRY		1
-
-//// Generalize to a menu entry struct-> all functions must be void with no args, should be fine
-//GRAPH_GEN_INFO avail_graphs[] = {
-//	GRAPH_GEN_INFO{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
-//	GRAPH_GEN_INFO{"Stacked Prism", "Stacked_Prism", user_stacked_prism_gen},
-//	GRAPH_GEN_INFO{"Z_m^n", "Z_m^n", user_z_mn_gen}
-//};
+constexpr auto NUM_MAIN_MENU_OPTIONS = __LINE__ - MAIN_MENU_OPTS_START_LINE - 3; // https://stackoverflow.com/questions/14989274/is-it-possible-to-determine-the-number-of-elements-of-a-c-enum-class
+#if defined(__clang__)
+// clang-format on
+#endif // __clang__
 
 MENU_ENTRY gen_menu_options[] = {
 	MENU_ENTRY{"Generalized Petersen", "Generalized_Petersen", user_generalized_petersen_gen},
@@ -105,12 +95,20 @@ MENU_ENTRY gen_menu_options[] = {
 	MENU_ENTRY{"Z_m^n", "Z_m^n", user_z_mn_gen}
 };
 
-// If the order in the avail_graphs array is changed or a new entry is added, these
-// #define's should be updated accordingly
-#define NUM_GRAPH_FAMS					3 // change name of this #define?
+// menu options for user_x_gen() functions
+// If the order in the avail_graphs array is changed or a new entry is added...
+// ...an additional #define should be added here
+#if defined(__clang__)
+// clang-format off
+#endif // __clang__
+constexpr auto GEN_MENU_OPTS_START_LINE = __LINE__;
 #define GEN_MENU_GEN_PET_ENTRY			0
 #define GEN_MENU_STACKED_PRISM_ENTRY	1
 #define GEN_MENU_Z_MN_ENTRY				2
+constexpr auto NUM_GRAPH_FAMS = __LINE__ - GEN_MENU_OPTS_START_LINE - 1;
+#if defined(__clang__)
+// clang-format on
+#endif // __clang__
 
 // Leave commented out if you want files in the project's working directory
 //#define ALT_ADJ_PATH			"C:\\Users\\willl\\Desktop\\Adjacency_Information"	// (for example on my machine...)
@@ -142,7 +140,7 @@ MENU_ENTRY gen_menu_options[] = {
 ****************************************************************************/
 void inline print_game_results(const GAME_STATE p1_result)
 {
-	printf("%s Wins!\n", p1_result == WIN_STATE ? "P1" : "P2");
+	printf("%s Wins!\n", p1_result == GAME_STATE::WIN_STATE ? "P1" : "P2");
 }
 
 /****************************************************************************

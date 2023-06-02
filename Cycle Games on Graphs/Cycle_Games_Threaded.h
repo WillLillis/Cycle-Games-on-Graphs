@@ -41,13 +41,13 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t curr_node, const uint_fast16_t 
 			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) { // and the edge between them is unused
 			open_edges++;
 			if (node_use_list[curr_neighbor] == USED) { // if the neighbor has been previously visited, going back creates a cycle!
-				return WIN_STATE;
+				return GAME_STATE::WIN_STATE;
 			}
 		}
 	}
 
 	if (open_edges == 0) { // if there are 0 open edges, we're in a loss state
-		return LOSS_STATE;
+		return GAME_STATE::LOSS_STATE;
 	}
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++) {
@@ -62,15 +62,12 @@ GAME_STATE play_MAC_threaded(const uint_fast16_t curr_node, const uint_fast16_t 
 			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
 			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries
 			node_use_list[curr_neighbor] = NOT_USED;
-			if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
-				return WIN_STATE;
-			}
-			if (move_result == ERROR_STATE) {
-				return ERROR_STATE;
+			if (move_result == GAME_STATE::LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
+				return GAME_STATE::WIN_STATE;
 			}
 		}
 	}
 
 	// if we've gotten to this point there's no good moves-> game is in a loss state
-	return LOSS_STATE;
+	return GAME_STATE::LOSS_STATE;
 }
