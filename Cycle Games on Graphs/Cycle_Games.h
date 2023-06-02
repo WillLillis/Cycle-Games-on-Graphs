@@ -64,9 +64,8 @@ typedef uint_fast8_t PLAYER_SIDE;
 #define USED		1
 #define NOT_USED	0
 
-// might also want to transition index_translation() over to a macro, although nested macros are considered to be bad practice so maybe not...
-// need to do some benchmarking to make sure this doesn't hurt performance...would definitely be more readable...
-// this should probably go in Adjacency_Matrix.h
+// since we're using an adjacency matrix internally, this involves marking two entries every time a move is done/undone along a single edge
+// instead of explicitly marking adj_matr[i,j] and adj[j,i] in the code, we'll do both with this macro for the sake of readability
 #define MARK_EDGE(arr, num_nodes, node_1, node_2, edge_val) do { arr[index_translation(num_nodes, node_1, node_2)] = edge_val;\
 															arr[index_translation(num_nodes, node_2, node_1)] = edge_val; } while(false)
 
@@ -205,13 +204,11 @@ GAME_STATE play_MAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == ADJACENT // if curr_node and curr_neighbor are adjacent
 			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) { // and the edge between them is unused
 			// try making the move along that edge
-			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = USED;
-			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = USED; // have to mark both entries
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, USED);
 			node_use_list[curr_neighbor] = USED;
 			move_result = play_MAC_quiet(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list);
 			// reset the move after returning
-			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
-			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, NOT_USED);
 			node_use_list[curr_neighbor] = NOT_USED;
 			if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 				return WIN_STATE;
@@ -289,13 +286,11 @@ GAME_STATE play_MAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == ADJACENT // if curr_node and curr_neighbor are adjacent
 			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) { // and the edge between them is unused
 			// try making the move along that edge
-			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = USED;
-			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = USED; // have to mark both entries 
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, USED);
 			node_use_list[curr_neighbor] = USED;
 			move_result = play_MAC_loud(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list, move_hist, recur_depth + 1, output);
 			// reset the move after returning
-			edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
-			edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, NOT_USED);
 			node_use_list[curr_neighbor] = NOT_USED;
 			progress_log(output, recur_depth, "%s Playing from %hu to %hu results in a %s.",
 				recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
@@ -344,13 +339,11 @@ GAME_STATE play_AAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == NOT_USED) { // and the edge between them is unused
 			if (node_use_list[curr_neighbor] == NOT_USED) { // move doesn't immediately result in a cycle, might as well try it out
 				// try making the move along that edge
-				edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = USED;
-				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = USED; // have to mark both entries 
+				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, USED);
 				node_use_list[curr_neighbor] = USED;
 				move_result = play_AAC_quiet(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list);
 				// reset the move after returning
-				edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
-				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
+				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, NOT_USED);
 				node_use_list[curr_neighbor] = NOT_USED;
 				if (move_result == LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
 					return WIN_STATE;
@@ -399,13 +392,11 @@ GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 				progress_log(output, recur_depth, "%s Checking the play from node %hu to %hu\n",
 					recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor);
 				// try making the move along that edge
-				edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = USED;
-				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = USED; // have to mark both entries 
+				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, USED);
 				node_use_list[curr_neighbor] = USED;
 				move_result = play_AAC_loud(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list, move_hist, recur_depth + 1, output);
 				// reset the move after returning
-				edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] = NOT_USED;
-				edge_use_matrix[index_translation(num_nodes, curr_neighbor, curr_node)] = NOT_USED; // have to mark both entries 
+				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, NOT_USED);
 				node_use_list[curr_neighbor] = NOT_USED;
 				progress_log(output, recur_depth, "%s Playing from %hu to %hu results in a %s. ",
 					recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor, move_result == WIN_STATE ? "LOSS_STATE" : "WIN_STATE");

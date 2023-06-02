@@ -447,15 +447,10 @@ void user_plays(const std::filesystem::path adj_info_path)
 	// Have to mark the starting node as used!
 	node_use[node_select] = USED;
 
-	auto start = std::chrono::high_resolution_clock::now();
-	auto stop = std::chrono::high_resolution_clock::now();
-
 	GAME_STATE game_result;
 	if (output_select == 0) { // Quiet 
 		if (game_select == 0) { // MAC
-			start = std::chrono::high_resolution_clock::now();
 			game_result = play_MAC_quiet(node_select, num_nodes, adj_info, edge_use, node_use);
-			stop = std::chrono::high_resolution_clock::now();
 		} else { // AAC
 			game_result = play_AAC_quiet(node_select, num_nodes, adj_info, edge_use, node_use);
 		}
@@ -504,8 +499,6 @@ void user_plays(const std::filesystem::path adj_info_path)
 	
 	printf("\n\nFile: %s, Starting Node: %hu, Game: %s\n", adj_info_path.filename().string().c_str(), (uint16_t)node_select, game_select == 0 ? "MAC" : "AAC");
 	print_game_results(game_result);
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout << "Time: " << duration.count() << std::endl;
 
 	printf("Press [ENTER] to continue\n");
 	char throw_away = std::getchar();
