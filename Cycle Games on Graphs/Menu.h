@@ -434,10 +434,9 @@ void user_plays(const std::filesystem::path adj_info_path)
 	// Now that all of the options have been specified, it's time to set up to actually play the game as requested
 	std::vector<EDGE_STATE> edge_use(num_nodes * num_nodes, EDGE_STATE::NOT_USED);
 	std::vector<NODE_STATE> node_use(num_nodes, NODE_STATE::NOT_USED);
-
+	
 	// Have to mark the starting node as used!
 	node_use[node_select] = NODE_STATE::USED;
-
 	GAME_STATE game_result;
 	if (output_select == 0) { // Quiet 
 		if (game_select == 0) { // MAC
