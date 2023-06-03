@@ -46,12 +46,6 @@
 * for said family, as well as a pointer to a function that will generate an adjacency
 * listing for it and write said listing to a file
 * 
-* In order to add a graph to generate in the code base, basically all you'll have to do
-* besides writing the generating and user generate function (takes in user input for the graph
-* parameters and calls the generating function) will be to add an instance of the below struct
-* representing it into the avail_graphs array, add a #define for the entry number in the
-* array, and increase the NUM_GRAPH_FAMS definition accordingly
-* 
 */
 // have to declare (but not define) the functions up here so that they
 // can be in the avail_graphs array, defined below
@@ -360,8 +354,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 	printf("Select the game to play:\n");
 	printf("[0] MAC\n"); // change to "Make-A-Cycle (MAC)" ??
 	printf("[1] AAC\n"); // change to "Avoid-A-Cycle (AAC)" ??
-	//printf("[2] GG\n"); // GG for Generalized Geography?
-	printf("[2] [BACK]\n"); // would have to change to [3]-> want to have a NUM_GAMES define somewhere maybe-> could do a similar struct/ array combo as with the graph families...
+	printf("[2] [BACK]\n");
 	do {
 		if (bad_input) {
 			erase_lines(2);
@@ -452,8 +445,7 @@ void user_plays(const std::filesystem::path adj_info_path)
 		} else { // AAC
 			game_result = play_AAC_quiet(node_select, num_nodes, adj_info, edge_use, node_use);
 		}
-	}
-	else { // Loud
+	} else { // Loud
 		std::vector<uint_fast16_t> move_hist(num_nodes);
 
 		FILE* result_stream;
@@ -532,16 +524,15 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 
 	while (true) {
 		clear_screen();
-		// is having the full path displayed helpful?
 		printf("%s\n", curr_dir.string().c_str()); // print the current directory so the user knows where they are
 		printf("Select a [FILE] to play on, or a [DIR] to open.\n");
 		entry_index = 0;
 
 		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) {
-			if (dir_entry.is_directory()) {
+			if (dir_entry.is_directory()) [[unlikely]] {
 				printf("[%03hu][DIR]  %s\n", (uint16_t)entry_index, dir_entry.path().filename().string().c_str());
 				entry_index++;
-			} else if (dir_entry.is_regular_file()) {
+			} else if (dir_entry.is_regular_file()) [[likely]] {
 				printf("[%03hu][FILE] %s\n", (uint16_t)entry_index, dir_entry.path().filename().string().c_str());
 				entry_index++;
 			}
@@ -577,7 +568,7 @@ void play_menu_subdir(const std::filesystem::path curr_dir)
 			// could append all the dir entries to a std::vector and grab from that...
 		entry_index = 0;
 		temp_path = curr_dir;
-		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) { // starts in cwd
+		for (auto const& dir_entry : std::filesystem::directory_iterator(curr_dir)) {
 			if (dir_entry.is_directory()) {
 				if (entry_index == file_selection) {
 					temp_path /= dir_entry.path().filename();
@@ -648,7 +639,7 @@ void play_menu()
 * - std::string : the generated name for the specified graph's adjacency 
 * information file
 ****************************************************************************/
-// safer way to do va_args than the C way?
+// safer way to do va_args than the C way?-> look into templates (ew)
 std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fast32_t num_args, ...)
 {
 	if (!(graph_fam >= 0 && graph_fam < NUM_GRAPH_FAMS)) [[unlikely]] {
@@ -657,9 +648,8 @@ std::string get_adj_info_file_name(const uint_fast16_t graph_fam, const uint_fas
 		return "";
 	}
 
-	std::string file_name = gen_menu_options[graph_fam].internal_name; // false positive warning pops up here
+	std::string file_name = gen_menu_options[graph_fam].internal_name;
 	if (num_args == 0) [[unlikely]] { // no graph parameters
-	
 		file_name.append(".txt");
 		return file_name;
 	}

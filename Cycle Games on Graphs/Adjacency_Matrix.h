@@ -20,11 +20,11 @@
 *
 * Because using '\n' as a delimiter breaks compatability for files shared between Windows and Mac machines (due to the difference in endline chars),
 * we'll #define the following delimiter character below. The choice is almost entirely arbitrary, it just 
-*	- can't be a number 
+*	- can't be a number
 *	- can't be '\n'
 *	- there may be other restrictions that we haven't encountered yet
 */ 
-#define ADJ_FILE_DELIM	((char)35) // ASCII character code for '#'
+#define ADJ_FILE_DELIM	'#' //((char)35) // ASCII character code for '#'
 
 
 // Maybe a little overkill, but some defensive programming here to limit how many elements we'll read in
@@ -492,7 +492,7 @@ bool z_mn_gen(FILE* __restrict output, const uint_fast16_t m, const uint_fast16_
 	fprintf(output, "Adjacency_Listing\n");
 	for (uint_fast16_t i = 0; i < num_tuples; i++) {
 		for (uint_fast16_t j = i; j < num_tuples; j++) {
-			if(tuple_diff(member_list, i * n, j * n, n) == 1) {
+			if(tuple_diff(member_list, (size_t)i * (size_t)n, (size_t)j * (size_t)n, n) == 1) {
 				if (has_entry == true) { // doing this to avoid a newline character at the end of the file
 					fprintf(output, "%c%hu,%hu", ADJ_FILE_DELIM, (uint16_t)i, (uint16_t)j);
 				} else {

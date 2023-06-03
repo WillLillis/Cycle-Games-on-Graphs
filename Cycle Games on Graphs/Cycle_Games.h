@@ -39,15 +39,13 @@ enum class GAME_STATE : uint_fast16_t {
 
 // Keeping these as separate enum classes for now, in case we want to expand one of them separately later...
 enum class EDGE_STATE : uint_fast16_t {
-	USED,
-	NOT_USED
+	NOT_USED,
+	USED
 };
 enum class NODE_STATE : uint_fast16_t {
-	USED,
-	NOT_USED
+	NOT_USED,
+	USED
 };
-//#define USED		1
-//#define NOT_USED	0
 
 // since we're using an adjacency matrix internally, this involves marking two entries every time a move is done/undone along a single edge
 // instead of explicitly marking adj_matr[i,j] and adj[j,i] in the code, we'll do both with this macro for the sake of readability
@@ -77,7 +75,7 @@ void fprint_indent(FILE* __restrict output, const uint_fast16_t num_indent)
 		return;
 	}
 
-	std::string indent_str(num_indent, '\t');
+	std::string indent_str(num_indent, '\t'); // cost of allocation less than iteratively printing 'num_indent' tabs?
 	fprintf(output, "%s", indent_str.c_str());
 }
 
@@ -321,18 +319,17 @@ GAME_STATE play_AAC_quiet(const uint_fast16_t curr_node, const uint_fast16_t num
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++) {
 		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == Adjacency_Info::ADJACENT // if curr_node and curr_neighbor are adjacent
-			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == EDGE_STATE::NOT_USED) { // and the edge between them is unused
-			if (node_use_list[curr_neighbor] == NODE_STATE::NOT_USED) { // move doesn't immediately result in a cycle, might as well try it out
-				// try making the move along that edge
-				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::USED);
-				node_use_list[curr_neighbor] = NODE_STATE::USED;
-				move_result = play_AAC_quiet(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list);
-				// reset the move after returning
-				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::NOT_USED);
-				node_use_list[curr_neighbor] = NODE_STATE::NOT_USED;
-				if (move_result == GAME_STATE::LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
-					return GAME_STATE::WIN_STATE;
-				}
+			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == EDGE_STATE::NOT_USED// and the edge between them is unused
+			&& node_use_list[curr_neighbor] == NODE_STATE::NOT_USED) { // move doesn't immediately result in a cycle, might as well try it out
+			// try making the move along that edge
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::USED);
+			node_use_list[curr_neighbor] = NODE_STATE::USED;
+			move_result = play_AAC_quiet(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list);
+			// reset the move after returning
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::NOT_USED);
+			node_use_list[curr_neighbor] = NODE_STATE::NOT_USED;
+			if (move_result == GAME_STATE::LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
+				return GAME_STATE::WIN_STATE;
 			}
 		}
 	}
@@ -372,25 +369,24 @@ GAME_STATE play_AAC_loud(const uint_fast16_t curr_node, const uint_fast16_t num_
 
 	for (uint_fast16_t curr_neighbor = 0; curr_neighbor < num_nodes; curr_neighbor++) {
 		if (adj_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == Adjacency_Info::ADJACENT // if curr_node and curr_neighbor are adjacent
-			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == EDGE_STATE::NOT_USED) { // and the edge between them is unused
-			if (node_use_list[curr_neighbor] == NODE_STATE::NOT_USED) { // move doesn't immediately result in a cycle, might as well try it out
-				progress_log(output, recur_depth, "%s Checking the play from node %hu to %hu\n",
-					recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor);
-				// try making the move along that edge
-				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::USED);
-				node_use_list[curr_neighbor] = NODE_STATE::USED;
-				move_result = play_AAC_loud(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list, move_hist, recur_depth + 1, output);
-				// reset the move after returning
-				MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::NOT_USED);
-				node_use_list[curr_neighbor] = NODE_STATE::NOT_USED;
-				progress_log(output, recur_depth, "%s Playing from %hu to %hu results in a %s. ",
-					recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor, move_result == GAME_STATE::WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
-				progress_log(output, 0, "Move history: ");
-				fprint_move_hist(output, recur_depth, move_hist);
-				fprintf(output, "->%hu\n", (uint16_t)curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
-				if (move_result == GAME_STATE::LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
-					return GAME_STATE::WIN_STATE;
-				}
+			&& edge_use_matrix[index_translation(num_nodes, curr_node, curr_neighbor)] == EDGE_STATE::NOT_USED // and the edge between them is unused
+			&& node_use_list[curr_neighbor] == NODE_STATE::NOT_USED) { // move doesn't immediately result in a cycle, might as well try it out
+			progress_log(output, recur_depth, "%s Checking the play from node %hu to %hu\n",
+				recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor);
+			// try making the move along that edge
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::USED);
+			node_use_list[curr_neighbor] = NODE_STATE::USED;
+			move_result = play_AAC_loud(curr_neighbor, num_nodes, adj_matrix, edge_use_matrix, node_use_list, move_hist, recur_depth + 1, output);
+			// reset the move after returning
+			MARK_EDGE(edge_use_matrix, num_nodes, curr_neighbor, curr_node, EDGE_STATE::NOT_USED);
+			node_use_list[curr_neighbor] = NODE_STATE::NOT_USED;
+			progress_log(output, recur_depth, "%s Playing from %hu to %hu results in a %s. ",
+				recur_depth % 2 == 0 ? "P1:" : "P2:", (uint16_t)curr_node, (uint16_t)curr_neighbor, move_result == GAME_STATE::WIN_STATE ? "LOSS_STATE" : "WIN_STATE");
+			progress_log(output, 0, "Move history: ");
+			fprint_move_hist(output, recur_depth, move_hist);
+			fprintf(output, "->%hu\n", (uint16_t)curr_neighbor); // since we don't formally "move" to this node, it's not included in the move_hist array
+			if (move_result == GAME_STATE::LOSS_STATE) { // if the move puts the game into a loss state, then the current state is a win state
+				return GAME_STATE::WIN_STATE;
 			}
 		}
 	}
