@@ -1,5 +1,5 @@
 #pragma once
-
+// https://github.com/PaulRitaldato1/ThreadPool/tree/master
 #include <thread>
 #include <vector>
 #include <queue>
@@ -38,11 +38,11 @@ public:
 		}
 	}
 
-	//add any arg # function to queue
+	// add any arg # function to queue
 	template <typename Func, typename... Args>
 	auto enqueue(Func&& f, Args&&... args)
 	{
-		//get return type of the function
+		// get return type of the function
 		using RetType = std::invoke_result_t<Func, Args...>;
 
 		auto task = std::make_shared<std::packaged_task<RetType()>>([&f, &args...]() { return f(std::forward<Args>(args)...); });
@@ -51,7 +51,7 @@ public:
 			// lock jobQueue mutex, add job to the job queue 
 			std::scoped_lock<std::mutex> lock(m_jobMutex);
 
-			//place the job into the queue
+			// place the job into the queue
 			m_jobQueue.emplace([task]() {
 				(*task)();
 			});
