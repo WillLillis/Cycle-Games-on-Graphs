@@ -1,103 +1,94 @@
 #pragma once
 // https://github.com/PaulRitaldato1/ThreadPool/tree/master
-#include <thread>
-#include <vector>
-#include <queue>
-#include <mutex>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <future>
-#include <atomic>
+#include <mutex>
+#include <queue>
+#include <thread>
 #include <type_traits>
 #include <typeinfo>
+#include <vector>
 
 /* ThreadPool class */
-class ThreadPool
-{
-public:
+class ThreadPool {
+  public:
+    ThreadPool() {
+        m_shutdown.store(false, std::memory_order_relaxed);
+        createThreads(1);
+    }
 
-	ThreadPool()
-	{
-		m_shutdown.store(false, std::memory_order_relaxed);
-		createThreads(1);
-	}
+    ThreadPool(std::size_t numThreads) {
+        m_shutdown.store(false, std::memory_order_relaxed);
+        createThreads(numThreads);
+    }
 
-	ThreadPool(std::size_t numThreads)
-	{
-		m_shutdown.store(false, std::memory_order_relaxed);
-		createThreads(numThreads);
-	}
+    ~ThreadPool() {
+        m_shutdown.store(true, std::memory_order_relaxed);
+        m_notifier.notify_all();
 
-	~ThreadPool()
-	{
-		m_shutdown.store(true, std::memory_order_relaxed);
-		m_notifier.notify_all();
+        for (std::jthread &th : m_threads) {
+            th.join();
+        }
+    }
 
-		for (std::jthread& th : m_threads) {
-			th.join();
-		}
-	}
+    // add any arg # function to queue
+    template <typename Func, typename... Args>
+    auto enqueue(Func &&f, Args &&...args) {
+        // get return type of the function
+        using RetType = std::invoke_result_t<Func, Args...>;
 
-	// add any arg # function to queue
-	template <typename Func, typename... Args>
-	auto enqueue(Func&& f, Args&&... args)
-	{
-		// get return type of the function
-		using RetType = std::invoke_result_t<Func, Args...>;
+        auto task = std::make_shared<std::packaged_task<RetType()>>(
+            [&f, &args...]() { return f(std::forward<Args>(args)...); });
 
-		auto task = std::make_shared<std::packaged_task<RetType()>>([&f, &args...]() { return f(std::forward<Args>(args)...); });
+        {
+            // lock jobQueue mutex, add job to the job queue
+            std::scoped_lock<std::mutex> lock(m_jobMutex);
 
-		{
-			// lock jobQueue mutex, add job to the job queue 
-			std::scoped_lock<std::mutex> lock(m_jobMutex);
+            // place the job into the queue
+            m_jobQueue.emplace([task]() { (*task)(); });
+        }
+        m_notifier.notify_one();
 
-			// place the job into the queue
-			m_jobQueue.emplace([task]() {
-				(*task)();
-			});
-		}
-		m_notifier.notify_one();
+        return task->get_future();
+    }
 
-		return task->get_future();
-	}
-	
-	/* utility functions */
-	std::size_t getThreadCount() const {
-		return m_threads.size();
-	}
+    /* utility functions */
+    std::size_t getThreadCount() const { return m_threads.size(); }
 
-private:
+  private:
+    using Job = std::function<void()>;
+    std::vector<std::jthread> m_threads;
+    std::queue<Job> m_jobQueue;
+    std::condition_variable m_notifier;
+    std::mutex m_jobMutex;
+    std::atomic<bool> m_shutdown;
 
-	using Job = std::function<void()>;
-	std::vector<std::jthread> m_threads;
-	std::queue<Job> m_jobQueue;
-	std::condition_variable m_notifier;
-	std::mutex m_jobMutex;
-	std::atomic<bool> m_shutdown;
+    void createThreads(std::size_t numThreads) {
+        m_threads.reserve(numThreads);
+        for (int i = 0; i != numThreads; ++i) {
+            m_threads.emplace_back(std::jthread([this]() {
+                while (true) {
+                    Job job;
+                    {
+                        std::unique_lock<std::mutex> lock(m_jobMutex);
+                        m_notifier.wait(lock, [this] {
+                            return !m_jobQueue.empty() ||
+                                   m_shutdown.load(std::memory_order_relaxed);
+                        });
 
-	void createThreads(std::size_t numThreads)
-	{
-		m_threads.reserve(numThreads);
-		for (int i = 0; i != numThreads; ++i) {
-			m_threads.emplace_back(std::jthread([this]()
-			{
-				while (true) {
-					Job job;
-					{
-						std::unique_lock<std::mutex> lock(m_jobMutex);
-						m_notifier.wait(lock, [this] {return !m_jobQueue.empty() || m_shutdown.load(std::memory_order_relaxed); });
+                        if (m_shutdown.load(std::memory_order_relaxed)) {
+                            break;
+                        }
 
-						if (m_shutdown.load(std::memory_order_relaxed)) {
-							break;
-						}
+                        job = std::move(m_jobQueue.front());
 
-						job = std::move(m_jobQueue.front());
-
-						m_jobQueue.pop();
-					}
-					job();
-				}
-			}));
-		}
-	}
+                        m_jobQueue.pop();
+                    }
+                    job();
+                }
+            }));
+        }
+    }
 }; /* end ThreadPool Class */
