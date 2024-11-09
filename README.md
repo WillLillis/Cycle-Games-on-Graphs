@@ -1,6 +1,6 @@
 # Cycle Games on Graphs
 
-Computer code for playing the combinatorial games <i>Make-A-Cycle</i> (MAC) and <i>Avoid-A-Cycle</i> (AAC). These games were first defined for Cayley graphs in the paper <a href="http://dx.doi.org/10.1515/9783110755411-011">Relator Games on Groups</a>. A second paper discussing the games MAC and AAC is forthcoming (put pre-print link here when ready).
+Computer code for playing the combinatorial games <i>Make-A-Cycle</i> (MAC) and <i>Avoid-A-Cycle</i> (AAC). These games were first defined for Cayley graphs in the paper [Relator Games on Groups](http://dx.doi.org/10.1515/9783110755411-011). A second paper, [Cycle Games on Graphs](https://math.colgate.edu/~integers/yg4/yg4.pdf), discusses the MAC and AAC games on additional graphs including complete and complete bipartite graphs, wheel graphs, stacked prism graphs, and some generalized Petersen graphs.
 
 ## Compiling/ Building
 
